@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id // Sliced from email to get the value, so no default
+  email String @unique
+  passwordHashed String 
+  namaLengkap String
+  username String @unique
+  departemen String
+  fakultas String
+  isAdmin Boolean @default(false) //if you seed an admin from function that this wont trigger
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  membership MerchantMember[]
+}
+
+model Merchant {
+  id String @id @default(cuid())
+  namaToko String
+  deskripsi String?
+  status MerchantStatus @default(PENDING)
+  createdAt DateTime @default(now())
+
+  members MerchantMember[]
+}
+
+model MerchantMember {
+  id String @id @default(cuid())
+  userId String
+  merchantId String
+  role MerchantRole @default(STAFF)
+  joinedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  merchant Merchant @relation(fields: [merchantId], references: [id])
+
+  @@unique([userId, merchantId]) // make sure no same people from the same merchant have 2 different role
+}
+
+enum MerchantRole { // can add more role here if needed (depends)
+  OWNER
+  STAFF
+}
+
+enum MerchantStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
