@@ -27,18 +27,19 @@ $font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 $font-heading: system-ui, 'Segoe UI', Roboto, sans-serif;
 $font-mono: ui-monospace, Consolas, monospace;
 
-// Login screen tokens, taken from the Figma "Login" frame (node 1:2).
-$login-bg: #151515;
-$login-wave: #111111;
-$login-field-bg: #2d2d2d;
-$login-text: #ffffff;
-$login-text-muted: rgba(255, 255, 255, 0.5);
-$login-divider: rgba(255, 255, 255, 0.2);
-$login-label-opacity: 0.5;
-$login-placeholder-opacity: 0.2;
-$login-radius-field: 16px;
-$login-radius-art: 20px;
-$login-radius-mark: 20px;
+// Shared auth-screen tokens, taken from the Figma auth frames
+// (Login 1:2, Register Stage 1 1:41, Register Stage 2 1:95, Forget Password 1:64).
+$auth-bg: #151515;
+$auth-wave: #111111;
+$auth-field-bg: #2d2d2d;
+$auth-text: #ffffff;
+$auth-text-muted: rgba(255, 255, 255, 0.5);
+$auth-divider: rgba(255, 255, 255, 0.2);
+$auth-label-opacity: 0.5;
+$auth-placeholder-opacity: 0.2;
+$auth-radius-field: 16px;
+$auth-radius-art: 20px;
+$auth-radius-mark: 20px;
 $breakpoint-art-hide: 1200px;
 $breakpoint-mobile: 640px;
-$font-login: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+$font-auth: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;

@@ -19,9 +19,9 @@ body,
 
 body {
   margin: 0;
-  font-family: v.$font-login;
-  background: v.$login-bg;
-  color: v.$login-text;
+  font-family: v.$font-auth;
+  background: v.$auth-bg;
+  color: v.$auth-text;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
