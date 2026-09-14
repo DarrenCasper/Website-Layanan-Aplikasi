@@ -22,7 +22,8 @@ authRouter.post("/register", async (req: Request, res: Response) => {
         if(!email || !password || !fullname || !username || !department || !fakultas){
             return res.status(400).json({message: "all parameter must be filled"})
         }
-
+        
+        // Maybe later this part needs check again because people can still bypass it even if the front is wrong or not
         if(!email.includes("@student.its.ac.id")){
             return res.status(400).json({message: "Email must be provided using the ITS one"})
         }
@@ -46,6 +47,7 @@ authRouter.post("/register", async (req: Request, res: Response) => {
         const token = providedToken(user.id, email)
 
         return res.status(201).json({
+            token,
             user: {
                 id: user.id,
                 email: user.email,
@@ -87,6 +89,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
         const token = providedToken(user.id, user.email)
 
         return res.status(200).json({
+            token,
             user: {
                 id: user.id,
                 email: user.email
