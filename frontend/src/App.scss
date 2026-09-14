@@ -1,0 +1,124 @@
+@use './styles/variables' as v;
+
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  flex-grow: 1;
+  padding: 72px 32px;
+  box-sizing: border-box;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    gap: 28px;
+    padding: 48px 20px;
+  }
+}
+
+.app__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.app__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.app__title {
+  margin: 0;
+  font-size: 56px;
+  letter-spacing: -1.68px;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    font-size: 36px;
+  }
+}
+
+.app__lead {
+  max-width: 46ch;
+  margin: 0;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+.stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.stack__item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: v.$radius-lg;
+  background: var(--social-bg);
+  transition:
+    border-color 0.25s,
+    box-shadow 0.25s;
+
+  &:hover {
+    border-color: var(--accent-border);
+    box-shadow: var(--shadow);
+  }
+}
+
+.stack__icon {
+  color: var(--accent);
+}
+
+.stack__name {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.2px;
+}
+
+.stack__detail {
+  margin: 0;
+  font-size: 15px;
+  line-height: 145%;
+}
+
+.app__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+  font-size: 15px;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    padding-top: 24px;
+  }
+}
+
+.app__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  font-weight: 500;
+}

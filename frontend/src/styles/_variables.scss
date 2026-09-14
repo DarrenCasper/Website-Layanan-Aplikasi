@@ -1,0 +1,28 @@
+// Shared SCSS design tokens.
+// Consumed with `@use '../styles/variables' as v;` so the Sass compiler
+// resolves these at build time (this is what proves SCSS is wired up,
+// since plain CSS custom properties would not need a preprocessor).
+
+$accent: #aa3bff;
+$accent-dark: #c084fc;
+$accent-bg: rgba(170, 59, 255, 0.1);
+$accent-bg-dark: rgba(192, 132, 252, 0.15);
+$accent-border: rgba(170, 59, 255, 0.5);
+$accent-border-dark: rgba(192, 132, 252, 0.5);
+
+$breakpoint-tablet: 1024px;
+
+$radius-sm: 4px;
+$radius-md: 6px;
+$radius-lg: 12px;
+
+$shadow:
+  rgba(0, 0, 0, 0.1) 0 10px 15px -3px,
+  rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+$shadow-dark:
+  rgba(0, 0, 0, 0.4) 0 10px 15px -3px,
+  rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+
+$font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+$font-heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+$font-mono: ui-monospace, Consolas, monospace;
