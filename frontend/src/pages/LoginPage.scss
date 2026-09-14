@@ -1,0 +1,304 @@
+@use '../styles/variables' as v;
+
+// Figma "Login" frame, node 1:2 (1920x1080).
+// Layout note: the design lays the left column out with `padding: 60px 260px`,
+// which is exactly what a 617px content box centred inside the 1137px panel
+// produces (40px + (1057 - 617) / 2 = 260px). Expressing it as max-width keeps
+// the same geometry at 1920 while staying sane on narrower viewports.
+
+.login {
+  display: flex;
+  min-height: 100svh;
+  background-color: v.$login-bg;
+  background-image: url('../assets/login-pattern.png');
+  background-repeat: repeat;
+  background-position: top left;
+  background-size: 200px 40px;
+  color: v.$login-text;
+  font-family: v.$font-login;
+}
+
+.login__panel {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 60px 40px;
+  overflow: hidden;
+}
+
+.login__content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 617px;
+  margin: 0 auto;
+}
+
+.login__brand {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.login__mark {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: v.$login-radius-mark;
+  background: v.$login-text;
+}
+
+.login__wordmark {
+  margin: 0;
+  color: v.$login-text;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.login__main {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  width: 100%;
+}
+
+.login__heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+  text-align: center;
+}
+
+.login__title {
+  margin: 0;
+  width: 100%;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.login__subtitle {
+  margin: 0;
+  width: 100%;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.login__form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+}
+
+.login__field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+}
+
+.login__label {
+  display: block;
+  margin: 0;
+  width: 100%;
+  color: v.$login-text;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: normal;
+  opacity: v.$login-label-opacity;
+}
+
+.login__input {
+  width: 100%;
+  height: 68px;
+  padding: 20px;
+  border: 0;
+  border-radius: v.$login-radius-field;
+  background: v.$login-field-bg;
+  color: v.$login-text;
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: normal;
+  outline: none;
+
+  &::placeholder {
+    color: v.$login-text;
+    opacity: v.$login-placeholder-opacity;
+  }
+}
+
+.login__submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 68px;
+  padding: 20px;
+  border: 0;
+  border-radius: v.$login-radius-field;
+  background: v.$login-text;
+  color: v.$login-bg;
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.login__footer {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.login__link {
+  color: v.$login-text;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: normal;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+// The divider occupies zero width in the design, so the 1px rule is painted by
+// a pseudo-element centred on the zero-width box.
+.login__divider {
+  position: relative;
+  flex: none;
+  width: 0;
+  height: 40px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 1px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    background-image: url('../assets/divider-line.svg');
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+  }
+}
+
+.login__footer-text {
+  color: v.$login-text-muted;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+// The photo fills the panel without driving its height: an in-flow image would
+// contribute its own 1040px intrinsic height to the flex line, which pins the
+// whole page to 1080px tall and clips the footer on shorter viewports. Taking it
+// out of flow lets it track the real container height instead. The width is the
+// 743px photo plus the 20px padding on either side.
+.login__art {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: stretch;
+  width: 743px + 40px;
+  padding: 20px;
+}
+
+.login__art-image {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: block;
+  width: 743px;
+  height: calc(100% - 40px);
+  border-radius: v.$login-radius-art;
+  object-fit: cover;
+}
+
+// The 1920x1080 frame has no narrow variant, so below these widths the photo
+// panel is dropped and the form reflows on its own.
+@media (max-width: v.$breakpoint-art-hide) {
+  .login__panel {
+    padding: 48px 24px;
+  }
+
+  .login__art {
+    display: none;
+  }
+}
+
+@media (max-width: v.$breakpoint-mobile) {
+  .login__wordmark {
+    font-size: 32px;
+  }
+
+  .login__main {
+    gap: 28px;
+  }
+
+  .login__title {
+    font-size: 36px;
+  }
+
+  .login__subtitle {
+    font-size: 18px;
+  }
+
+  .login__form {
+    gap: 16px;
+  }
+
+  .login__field {
+    gap: 12px;
+  }
+
+  .login__label {
+    font-size: 16px;
+  }
+
+  .login__input {
+    height: 56px;
+    padding: 16px;
+    font-size: 16px;
+  }
+
+  .login__submit {
+    height: 56px;
+    font-size: 18px;
+  }
+
+  .login__footer {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .login__divider {
+    display: none;
+  }
+
+  .login__link,
+  .login__footer-text {
+    font-size: 14px;
+  }
+}

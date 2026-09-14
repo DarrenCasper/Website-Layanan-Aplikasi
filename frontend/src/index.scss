@@ -1,107 +1,33 @@
 @use './styles/variables' as v;
 
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #{v.$accent};
-  --accent-bg: #{v.$accent-bg};
-  --accent-border: #{v.$accent-border};
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow: #{v.$shadow};
+// Full-bleed baseline. The login screen owns the whole viewport, so the root
+// shell only normalises the box model and paints the dark backdrop before
+// React mounts (avoids a white flash on first paint).
 
-  --sans: #{v.$font-sans};
-  --heading: #{v.$font-heading};
-  --mono: #{v.$font-mono};
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: v.$breakpoint-tablet) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #{v.$accent-dark};
-    --accent-bg: #{v.$accent-bg-dark};
-    --accent-border: #{v.$accent-border-dark};
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow: #{v.$shadow-dark};
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100svh;
 }
 
 body {
   margin: 0;
+  font-family: v.$font-login;
+  background: v.$login-bg;
+  color: v.$login-text;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-
-  @media (max-width: v.$breakpoint-tablet) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-
-  @media (max-width: v.$breakpoint-tablet) {
-    font-size: 20px;
-  }
-}
-
-p {
-  margin: 0;
-}
-
-code {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: v.$radius-sm;
-  color: var(--text-h);
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+#root {
+  display: flex;
+  flex-direction: column;
 }
