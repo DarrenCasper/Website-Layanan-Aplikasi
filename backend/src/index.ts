@@ -4,7 +4,7 @@ dotenv.config()
 
 import express, {type Response, type Request, type NextFunction, type ErrorRequestHandler} from 'express'
 import { prisma } from "./lib/db.ts"
-
+import authRouter from './route/auth.ts'
 
 const PORT = process.env.PORT || 4000
 const nodeEnv = process.env.NODE_ENV || 'development'
@@ -31,14 +31,6 @@ app.get("/health", async (req: Request, res: Response) => {
     }
 })
 
-// 404 page handler
-app.use((_req: Request, res: Response, _next:NextFunction) => {
-    res.status(404).json({
-        status: "error",
-        message: "Page Not Found. No Route Found"
-    })
-})
-
 // error handler
 const errorHandler: ErrorRequestHandler = (err: Error, _req: Request, res: Response, _next:NextFunction) => {
     console.error(err)
@@ -50,6 +42,15 @@ const errorHandler: ErrorRequestHandler = (err: Error, _req: Request, res: Respo
 
 
 // Add route here if there is new endpoint for frontend
+app.use("/auth", authRouter)
+
+// 404 page handler
+app.use((_req: Request, res: Response, _next:NextFunction) => {
+    res.status(404).json({
+        status: "error",
+        message: "Page Not Found. No Route Found"
+    })
+})
 
 app.use(errorHandler)
 
