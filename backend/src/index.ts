@@ -6,11 +6,22 @@ import express, {type Response, type Request, type NextFunction, type ErrorReque
 import { prisma } from "./lib/db.ts"
 import authRouter from './route/auth.ts'
 import merchantRouter from './route/merchant.ts'
+import cors from "cors"
 
 const PORT = process.env.PORT || 4000
 const nodeEnv = process.env.NODE_ENV || 'development'
 
 const app = express()
+
+
+// Cors handling origin
+if(!process.env.ALLOWED_ORIGINS){
+    throw new Error("Allowed origins is not set")
+}
+const allowedOrigins = (process.env.ALLOWED_ORIGINS).split(",").map((origin) => origin.trim()).filter(Boolean)
+
+app.use(cors({origin: allowedOrigins.includes("*") ? "*" : allowedOrigins}))
+
 
 app.use(express.json())
 

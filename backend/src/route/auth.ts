@@ -2,11 +2,12 @@ import { Router, type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import Jwt from "jsonwebtoken";
 import { prisma } from "../lib/db.ts";
-import { sendWelcomeEmail } from "../lib/mailer.ts"; // <-- 1. Import mailer
+import { sendWelcomeEmail } from "../lib/mailer.ts";
+import { Prisma } from "../generated/prisma/client.ts";
 
 const authRouter = Router();
 
-function providedToken(userId: string, email: string) { // Fixed TypeScript 'String' to 'string'
+function providedToken(userId: string, email: string) {
   const secret = process.env.JWT_TOKEN;
 
   if (!secret) {
@@ -29,6 +30,7 @@ authRouter.post("/register", async (req: Request, res: Response) => {
     }
 
     const NRP = String(email.slice(0, email.indexOf("@")));
+
     const passwordHashed = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
@@ -53,7 +55,58 @@ authRouter.post("/register", async (req: Request, res: Response) => {
       user: {
         id: user.id,
         email: user.email,
-        Fullname: user.namaLengkap,
+        fullname: user.namaLengkap,
+        username: user.username,
+        department: user.departemen,
+        fakultas: user.fakultas,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      // Prisma supplies the conflicting target fields in err.meta.target
+      const target = Array.isArray(err.meta?.target)
+        ? err.meta.target.join(", ")
+        : "email or username";
+
+      return res.status(409).json({
+        message: `A user with this ${target} already exists.`,
+      });
+    }
+    console.error(err);
+    return res.status(500).json({ message: "server internal error" });
+  }
+});
+
+authRouter.post("/login", async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and Password are needed" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid Credentials" });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.passwordHashed);
+
+    if (!isValidPassword) {
+      return res.status(400).json({ message: "Invalid Credentials" });
+    }
+
+    const token = providedToken(user.id, user.email);
+
+    return res.status(200).json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        fullname: user.namaLengkap,
         username: user.username,
         department: user.departemen,
         fakultas: user.fakultas,
@@ -62,45 +115,8 @@ authRouter.post("/register", async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "server internal error" });
+    return res.status(500).json({ message: "Interal Server Error" });
   }
 });
 
-authRouter.post("/login", async (req: Request, res: Response) => {
-    try{
-        const{email, password} = req.body
-
-        if(!email || !password){
-            return res.status(400).json({message: "Email and Password are needed"})
-        }
-        
-        const user = await prisma.user.findUnique({
-            where: {email}
-        })
-        if(!user){
-            return res.status(400).json({message: "Invalid Credentials"})
-        }
-
-        const isValidPassword = await bcrypt.compare(password, user.passwordHashed)
-
-        if(!isValidPassword){
-            return res.status(400).json({message: "Invalid Credentials"})
-        }
-
-        const token = providedToken(user.id, user.email)
-
-        return res.status(200).json({
-            token,
-            user: {
-                id: user.id,
-                email: user.email
-            }
-        })
-    }
-    catch(err){
-        console.error(err)
-        return res.status(500).json({message: "Interal Server Error"})
-    }
-})
-
-export default authRouter
+export default authRouter;

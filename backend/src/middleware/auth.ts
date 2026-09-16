@@ -26,7 +26,7 @@ export function requireAuth(req: Request, res:Response, next: NextFunction){
     const secret = process.env.JWT_TOKEN
 
     if(!secret){
-        return res.status(401).json({message: "JWT_TOKEN is not provided yet in .env"})
+        return res.status(500).json({message: "JWT_TOKEN is not provided yet in .env"})
     }
 
     try{
@@ -40,6 +40,14 @@ export function requireAuth(req: Request, res:Response, next: NextFunction){
         return res.status(401).json({message: "invalid token payload"})
     }
     catch(err){
+
+        if(err instanceof jwt.TokenExpiredError){
+            return res.status(401).json({message: "Token have expired"})
+        }
+
+        if(err instanceof jwt.JsonWebTokenError){
+            return res.status(401).json({message: "Invalid Token"})
+        }
         console.error(err)
         return res.status(500).json({message: "Internal server error"})
     }
