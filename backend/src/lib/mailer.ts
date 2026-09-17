@@ -29,3 +29,23 @@ export const sendWelcomeEmail = async (toEmail: string, fullname: string) => {
     // Do not throw error here so user registration still completes even if mail fails
   }
 };
+
+export const sendOtpEmail = async (toEmail: string, otp: string) => {
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM,
+      to: toEmail,
+      subject: "Your OTP Code for Password Reset",
+      html: `
+        <div style="font-family: sans-serif; padding: 20px;">
+          <h2>Password Reset Request</h2>
+          <p>Use the following One-Time Password (OTP) to reset your password:</p>
+          <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px; margin: 16px 0;">${otp}</p>
+          <p>This code will expire shortly. If you did not request a password reset, you can safely ignore this email.</p>
+        </div>
+      `,
+    });
+  } catch (error) {
+    console.error("Email sending failed:", error);
+  }
+};

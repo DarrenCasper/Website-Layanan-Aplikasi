@@ -6,6 +6,7 @@ import express, {type Response, type Request, type NextFunction, type ErrorReque
 import { prisma } from "./lib/db.ts"
 import authRouter from './route/auth.ts'
 import merchantRouter from './route/merchant.ts'
+import resetRouter from "./route/reset.ts"
 import cors from "cors"
 
 const PORT = process.env.PORT || 4000
@@ -56,6 +57,7 @@ const errorHandler: ErrorRequestHandler = (err: Error, _req: Request, res: Respo
 // Add route here if there is new endpoint for frontend
 app.use("/auth", authRouter)
 app.use("/create", merchantRouter)
+app.use("/reset", resetRouter)
 
 // 404 page handler
 app.use((_req: Request, res: Response, _next:NextFunction) => {

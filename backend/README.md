@@ -10,6 +10,8 @@ Backend API for Layap, built with Express, Prisma, and MySQL.
 - **Auth**: JWT (`jsonwebtoken`) + `bcryptjs` for password hashing
 - **Database**: MySQL 8, run via Docker Compose (with phpMyAdmin for a GUI)
 - **CORS**: `cors`, origins controlled via `ALLOWED_ORIGINS`
+- **Email**: `nodemailer` (welcome email on register, OTP email on password reset)
+- **Rate limiting**: `express-rate-limit` on the OTP request endpoint
 
 ## Prerequisites
 
@@ -42,6 +44,11 @@ Then fill in `.env` with your own values:
 | `MYSQL_PASSWORD`      | Password for `MYSQL_USER`                                  |
 | `DATABASE_URL`        | Full Prisma connection string, must match the 4 vars above (`mysql://MYSQL_USER:MYSQL_PASSWORD@localhost:3306/MYSQL_DATABASE`) |
 | `JWT_TOKEN`           | Secret used to sign/verify login JWTs                      |
+| `SMTP_HOST`           | SMTP server host, e.g. `smtp.gmail.com`                    |
+| `SMTP_PORT`           | SMTP server port (default `587`)                           |
+| `SMTP_USER`           | SMTP account username                                      |
+| `SMTP_PASS`           | SMTP account password / app password                       |
+| `SMTP_FROM`           | `From` header used on outgoing emails, e.g. `"ITS App <noreply@its.ac.id>"` |
 | `ALLOWED_ORIGINS`     | Comma-separated list of allowed CORS origins, e.g. `http://localhost:5173,https://layap.app`. Use `*` to allow any origin (dev only). **Required** — the server throws on startup if unset. |
 
 ### 3. Start the database
@@ -165,6 +172,57 @@ Registers a new user. Email must be a valid ITS student email (`@student.its.ac.
 **Response `200`**: same shape as register (`token` + `user`).
 
 **Errors**: `400` on missing fields or invalid credentials.
+
+---
+
+### `POST /reset/request`
+
+Requests a password-reset OTP. Always returns a generic success message, whether or not the email exists, to avoid leaking which emails are registered. Rate-limited to 5 requests per 15 minutes per IP.
+
+**Body**
+```json
+{
+  "email": "5024241006@student.its.ac.id"
+}
+```
+
+**Response `200`**
+```json
+{ "message": "If that email exist in our system, an OTP has been sent." }
+```
+
+If the email exists, a 6-digit OTP (valid for 10 minutes) is emailed to it via `sendOtpEmail`.
+
+**Errors**:
+- `400` if `email` is missing.
+- `429` if the rate limit is exceeded.
+
+---
+
+### `POST /reset/result`
+
+Verifies the OTP and sets a new password.
+
+**Body**
+```json
+{
+  "email": "5024241006@student.its.ac.id",
+  "otp": "123456",
+  "newPassword": "newSecret123"
+}
+```
+
+**Response `200`**
+```json
+{ "message": "Password succesfully changed" }
+```
+
+**Errors**:
+- `400` if any field is missing.
+- `200` (not an error status, but not a successful reset either) if the OTP is wrong, expired, exceeded the per-OTP attempt limit (5), or no OTP was requested — with a message specific to the reason (`Incorrect OTP code`, `The OTP has expired...`, `Too many incorrect attempts...`, `No reset found on this account`). Check the `message` field, not the HTTP status, to detect this case.
+- `400` if the account no longer exists (`User Account no longer existed or was deleted`).
+
+An OTP is single-use: it's consumed on the first successful verification and cannot be reused.
 
 ---
 
