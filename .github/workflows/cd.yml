@@ -11,7 +11,6 @@ jobs:
   deploy-backend:
     name: Trigger Coolify Deployment (Backend)
     runs-on: ubuntu-latest
-    if: hashFiles('backend/package.json') != ''
     defaults:
       run:
         working-directory: backend
@@ -43,7 +42,6 @@ jobs:
   deploy-frontend:
     name: Trigger Coolify Deployment (Frontend)
     runs-on: ubuntu-latest
-    if: hashFiles('frontend/package.json') != ''
     defaults:
       run:
         working-directory: frontend
@@ -52,6 +50,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js Runtime
+        if: hashFiles('frontend/package.json') != ''
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -59,14 +58,17 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install Dependencies
+        if: hashFiles('frontend/package.json') != ''
         run: npm ci
 
       - name: Final Pre-flight Verification
+        if: hashFiles('frontend/package.json') != ''
         run: |
           npm run lint
           npm test
 
       - name: Ping Coolify Deploy Webhook
+        if: hashFiles('frontend/package.json') != ''
         run: |
           echo "Triggering Coolify rolling update..."
           curl -f -X GET "${{ secrets.COOLIFY_DEPLOY_WEBHOOK_FRONTEND }}"
