@@ -26,6 +26,25 @@ app.use(cors({origin: allowedOrigins.includes("*") ? "*" : allowedOrigins}))
 
 app.use(express.json())
 
+import { transporter } from "./lib/mailer"; // Adjust path if needed
+
+app.get("/test-email", async (req, res) => {
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: process.env.SMTP_USER, // Sends a test email to yourself
+      subject: "ITS Service - SMTP Test",
+      text: "If you receive this, your Nodemailer setup is 100% working!",
+    });
+
+    console.log("Message sent ID:", info.messageId);
+    res.json({ status: "success", messageId: info.messageId });
+  } catch (error) {
+    console.error("Email send failed:", error);
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // Health check
 app.get("/health", async (req: Request, res: Response) => {
     try{
@@ -69,6 +88,10 @@ app.use((_req: Request, res: Response, _next:NextFunction) => {
 
 app.use(errorHandler)
 
-app.listen(PORT, () => {
-    console.log(`The server is listening on port ${PORT} in ${nodeEnv} mode.`)
-})
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server is running on http://0.0.0.0:${PORT}`);
+});
+
+app.get("/", (req, res) => {
+  res.json({ message: "API is running..." });
+});
