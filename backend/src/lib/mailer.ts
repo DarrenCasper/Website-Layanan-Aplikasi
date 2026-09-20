@@ -1,7 +1,11 @@
 import nodemailer from "nodemailer";
+import dotenv from "dotenv"
+
+dotenv.config()
 
 export const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
+  service: "Gmail",
   port: Number(process.env.SMTP_PORT) || 587,
   secure: false, // true for port 465, false for port 587
   debug: true,
@@ -9,8 +13,7 @@ export const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS, // 16-character App Password (not your normal Gmail password)
-  },
-  family: 4, // <--- Forces Nodemailer to use IPv4 instead of IPv6 (::1)
+  }, // family is not a nodemailer function? use it in index.ts
 });
 
 export const sendEmail = async (to: string, subject: string, text: string) => {
@@ -48,7 +51,7 @@ transporter.verify((error) => {
 export const sendWelcomeEmail = async (toEmail: string, fullname: string) => {
   try {
     await transporter.sendMail({
-      from: process.env.SMTP_FROM,
+      from: `"ITS App" <${process.env.SMTP_USER}`,
       to: toEmail,
       subject: "Welcome to ITS Service Portal",
       html: `
@@ -68,7 +71,7 @@ export const sendWelcomeEmail = async (toEmail: string, fullname: string) => {
 export const sendOtpEmail = async (toEmail: string, otp: string) => {
   try {
     await transporter.sendMail({
-      from: process.env.SMTP_FROM,
+      from: `"ITS App" <${process.env.SMTP_USER}`,
       to: toEmail,
       subject: "Your OTP Code for Password Reset",
       html: `

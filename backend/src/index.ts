@@ -1,6 +1,8 @@
 import dotenv from 'dotenv'
+import dns from "node:dns"
 
 dotenv.config()
+dns.setDefaultResultOrder("ipv4first")
 
 import express, {type Response, type Request, type NextFunction, type ErrorRequestHandler} from 'express'
 import { prisma } from "./lib/db.ts"
@@ -9,7 +11,7 @@ import merchantRouter from './route/merchant.ts'
 import resetRouter from "./route/reset.ts"
 import cors from "cors"
 
-const PORT = process.env.PORT || 4000
+const PORT = Number(process.env.PORT) || 4000
 const nodeEnv = process.env.NODE_ENV || 'development'
 
 const app = express()
@@ -26,9 +28,9 @@ app.use(cors({origin: allowedOrigins.includes("*") ? "*" : allowedOrigins}))
 
 app.use(express.json())
 
-import { transporter } from "./lib/mailer"; // Adjust path if needed
+import { transporter } from "./lib/mailer.ts"; // Adjust path if needed
 
-app.get("/test-email", async (req, res) => {
+app.get("/test-email", async (_req: Request, res: Response) => {
   try {
     const info = await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
@@ -88,8 +90,8 @@ app.use((_req: Request, res: Response, _next:NextFunction) => {
 
 app.use(errorHandler)
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server is running on http://0.0.0.0:${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
 
 app.get("/", (req, res) => {
