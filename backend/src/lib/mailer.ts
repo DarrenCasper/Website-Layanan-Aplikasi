@@ -1,14 +1,49 @@
 import nodemailer from "nodemailer";
 
 export const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
   port: Number(process.env.SMTP_PORT) || 587,
-  secure: false, // true for port 465, false for 587
+  secure: false, // true for port 465, false for port 587
+  debug: true,
+  logger: true,
   auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    pass: process.env.SMTP_PASS, // 16-character App Password (not your normal Gmail password)
   },
+  family: 4, // <--- Forces Nodemailer to use IPv4 instead of IPv6 (::1)
 });
+
+export const sendEmail = async (to: string, subject: string, text: string) => {
+  // Read process.env at execution time rather than import time
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+    logger: true,
+    debug: true,
+  });
+
+  return await transporter.sendMail({
+    from: process.env.SMTP_USER,
+    to,
+    subject,
+    text,
+  });
+};
+
+// Verify credentials on startup
+transporter.verify((error) => {
+  if (error) {
+    console.error("SMTP Configuration Error:", error);
+  } else {
+    console.log("SMTP Server is ready to send emails");
+  }
+});
+
 
 export const sendWelcomeEmail = async (toEmail: string, fullname: string) => {
   try {
