@@ -67,8 +67,8 @@ app.get("/health", async (req: Request, res: Response) => {
 const errorHandler: ErrorRequestHandler = (err: Error, _req: Request, res: Response, _next:NextFunction) => {
     console.error(err)
     res.status(503).json({
-        status: 'error',
-        message: err.message || "Internal Server Error"
+        message: "An unexpected error occured",
+        ...(nodeEnv === "development" && {error: err.message, stack: err.stack})
     })
 }
 
