@@ -47,8 +47,11 @@ transporter.verify((error) => {
   }
 });
 
+export const generateOTP = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
-export const sendWelcomeEmail = async (toEmail: string, fullname: string) => {
+export const sendWelcomeEmail = async (toEmail: string, fullname: string, otp: string) => {
   try {
     await transporter.sendMail({
       from: `"ITS App" <${process.env.SMTP_USER}`,
@@ -59,6 +62,8 @@ export const sendWelcomeEmail = async (toEmail: string, fullname: string) => {
           <h2>Welcome, ${fullname}!</h2>
           <p>Thank you for registering on our application.</p>
           <p>Your account (NRP: <strong>${toEmail.split('@')[0]}</strong>) is now active.</p>
+          <p>Use this following OTP code to log in<p>
+          <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px; margin: 16px 0;">${otp}</p>
         </div>
       `,
     });

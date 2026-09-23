@@ -1,0 +1,17 @@
+{
+    "frosted-glass-theme.filter": {
+        "default": {
+            "filter": "saturate(var(--fgt-saturate)) url(#fgt-acrylic-{key})",
+            "disableBackgroundColor": true,
+            "opacity": 0.4,
+            "customAttrs": {
+                "feGaussianBlur": {
+                    "stdDeviation": 30
+                }
+            }
+        },
+        "minimap": "blur(30px)",
+        "decorationsOverviewRuler": "blur(30px)",
+        "terminalOverlay": "blur(30px)"
+    }
+}
