@@ -1,0 +1,385 @@
+@use '../styles/variables' as v;
+
+// Shared shell for every auth screen. The Figma frames for Login (1:2),
+// Register Stage 1 (1:41), Register Stage 2 (1:95) and Forget Password (1:64)
+// all use the same 1920x1080 skeleton, so the shell lives here once and each
+// page supplies its own heading, form and footer.
+//
+// Layout note: the design lays the left column out with `padding: 60px 260px`,
+// which is exactly what a 617px content box centred inside the 1137px panel
+// produces (40px + (1057 - 617) / 2 = 260px). Expressing it as max-width keeps
+// the same geometry at 1920 while staying sane on narrower viewports.
+
+.auth {
+  display: flex;
+  min-height: 100svh;
+  background-color: v.$auth-bg;
+  background-image: url('../assets/auth-pattern.png');
+  background-repeat: repeat;
+  background-position: top left;
+  background-size: 200px 40px;
+  color: v.$auth-text;
+  font-family: v.$font-auth;
+}
+
+.auth__panel {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 60px 40px;
+  overflow: hidden;
+}
+
+.auth__content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 617px;
+  margin: 0 auto;
+}
+
+.auth__brand {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.auth__mark {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: v.$auth-radius-mark;
+  background: v.$auth-text;
+}
+
+.auth__wordmark {
+  margin: 0;
+  color: v.$auth-text;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.auth__main {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  width: 100%;
+}
+
+.auth__heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+  text-align: center;
+}
+
+.auth__title {
+  margin: 0;
+  width: 100%;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.auth__subtitle {
+  margin: 0;
+  width: 100%;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.auth__form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+}
+
+.auth__field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+}
+
+.auth__label {
+  display: block;
+  margin: 0;
+  width: 100%;
+  color: v.$auth-text;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: normal;
+  opacity: v.$auth-label-opacity;
+}
+
+.auth__input {
+  width: 100%;
+  height: 68px;
+  padding: 20px;
+  border: 0;
+  border-radius: v.$auth-radius-field;
+  background: v.$auth-field-bg;
+  color: v.$auth-text;
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: normal;
+  outline: none;
+
+  &::placeholder {
+    color: v.$auth-text;
+    opacity: v.$auth-placeholder-opacity;
+  }
+
+  // Register stage 2 gates the department field on the faculty answer. The
+  // disabled state must keep the exact Figma treatment, so the browser defaults
+  // for disabled inputs are overridden rather than inherited.
+  &:disabled {
+    background: v.$auth-field-bg;
+    color: v.$auth-text;
+    opacity: 1;
+    cursor: not-allowed;
+    -webkit-text-fill-color: v.$auth-text;
+
+    &::placeholder {
+      color: v.$auth-text;
+      opacity: v.$auth-placeholder-opacity;
+    }
+  }
+}
+
+.auth__submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 68px;
+  padding: 20px;
+  border: 0;
+  border-radius: v.$auth-radius-field;
+  background: v.$auth-text;
+  color: v.$auth-bg;
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+
+  // Every auth form disables its submit while a request is in flight, so the
+  // dimmed treatment lives here once rather than per page.
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// Inline feedback for a rejected request. The backend's own message is rendered
+// here verbatim, so the styling has to survive arbitrary sentence lengths.
+.auth__error {
+  margin: 0;
+  width: 100%;
+  color: v.$auth-danger;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+// Inline feedback for something that succeeded but needs acknowledging, such as
+// a resent OTP.
+.auth__notice {
+  margin: 0;
+  width: 100%;
+  color: v.$auth-notice;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.auth__footer {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.auth__link {
+  color: v.$auth-text;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: normal;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+// The divider occupies zero width in the design, so the 1px rule is painted by
+// a pseudo-element centred on the zero-width box.
+.auth__divider {
+  position: relative;
+  flex: none;
+  width: 0;
+  height: 40px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 1px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    background-image: url('../assets/divider-line.svg');
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+  }
+}
+
+.auth__footer-text {
+  color: v.$auth-text-muted;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+// Resend control on the OTP screen. It reads as a link but is a real button, so
+// the browser's default button chrome is cleared out here.
+.auth__resend {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: v.$auth-text;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: normal;
+  text-align: center;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// The photo fills the panel without driving its height: an in-flow image would
+// contribute its own 1040px intrinsic height to the flex line, which pins the
+// whole page to 1080px tall and clips the footer on shorter viewports. Taking it
+// out of flow lets it track the real container height instead. The width is the
+// 743px photo plus the 20px padding on either side.
+.auth__art {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: stretch;
+  width: 743px + 40px;
+  padding: 20px;
+}
+
+.auth__art-image {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: block;
+  width: 743px;
+  height: calc(100% - 40px);
+  border-radius: v.$auth-radius-art;
+  object-fit: cover;
+}
+
+// The 1920x1080 frame has no narrow variant, so below these widths the photo
+// panel is dropped and the form reflows on its own.
+@media (max-width: v.$breakpoint-art-hide) {
+  .auth__panel {
+    padding: 48px 24px;
+  }
+
+  .auth__art {
+    display: none;
+  }
+}
+
+@media (max-width: v.$breakpoint-mobile) {
+  .auth__wordmark {
+    font-size: 32px;
+  }
+
+  .auth__main {
+    gap: 28px;
+  }
+
+  .auth__title {
+    font-size: 36px;
+  }
+
+  .auth__subtitle {
+    font-size: 18px;
+  }
+
+  .auth__form {
+    gap: 16px;
+  }
+
+  .auth__field {
+    gap: 12px;
+  }
+
+  .auth__label {
+    font-size: 16px;
+  }
+
+  .auth__input {
+    height: 56px;
+    padding: 16px;
+    font-size: 16px;
+  }
+
+  .auth__submit {
+    height: 56px;
+    font-size: 18px;
+  }
+
+  .auth__error,
+  .auth__notice {
+    font-size: 14px;
+  }
+
+  .auth__resend {
+    font-size: 14px;
+  }
+
+  .auth__footer {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .auth__divider {
+    display: none;
+  }
+
+  .auth__link,
+  .auth__footer-text {
+    font-size: 14px;
+  }
+}

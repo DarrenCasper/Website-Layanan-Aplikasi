@@ -1,0 +1,47 @@
+// Shared SCSS design tokens.
+// Consumed with `@use '../styles/variables' as v;` so the Sass compiler
+// resolves these at build time (this is what proves SCSS is wired up,
+// since plain CSS custom properties would not need a preprocessor).
+
+$accent: #aa3bff;
+$accent-dark: #c084fc;
+$accent-bg: rgba(170, 59, 255, 0.1);
+$accent-bg-dark: rgba(192, 132, 252, 0.15);
+$accent-border: rgba(170, 59, 255, 0.5);
+$accent-border-dark: rgba(192, 132, 252, 0.5);
+
+$breakpoint-tablet: 1024px;
+
+$radius-sm: 4px;
+$radius-md: 6px;
+$radius-lg: 12px;
+
+$shadow:
+  rgba(0, 0, 0, 0.1) 0 10px 15px -3px,
+  rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+$shadow-dark:
+  rgba(0, 0, 0, 0.4) 0 10px 15px -3px,
+  rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+
+$font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+$font-heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+$font-mono: ui-monospace, Consolas, monospace;
+
+// Shared auth-screen tokens, taken from the Figma auth frames
+// (Login 1:2, Register Stage 1 1:41, Register Stage 2 1:95, Forget Password 1:64).
+$auth-bg: #151515;
+$auth-wave: #111111;
+$auth-field-bg: #2d2d2d;
+$auth-text: #ffffff;
+$auth-text-muted: rgba(255, 255, 255, 0.5);
+$auth-danger: #ff6b6b;
+$auth-notice: #7ee2a8;
+$auth-divider: rgba(255, 255, 255, 0.2);
+$auth-label-opacity: 0.5;
+$auth-placeholder-opacity: 0.2;
+$auth-radius-field: 16px;
+$auth-radius-art: 20px;
+$auth-radius-mark: 20px;
+$breakpoint-art-hide: 1200px;
+$breakpoint-mobile: 640px;
+$font-auth: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
