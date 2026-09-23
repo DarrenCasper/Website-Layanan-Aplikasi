@@ -260,6 +260,29 @@
   line-height: normal;
 }
 
+// Resend control on the OTP screen. It reads as a link but is a real button, so
+// the browser's default button chrome is cleared out here.
+.auth__resend {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: v.$auth-text;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: normal;
+  text-align: center;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 // The photo fills the panel without driving its height: an in-flow image would
 // contribute its own 1040px intrinsic height to the flex line, which pins the
 // whole page to 1080px tall and clips the footer on shorter viewports. Taking it
@@ -339,6 +362,10 @@
 
   .auth__error,
   .auth__notice {
+    font-size: 14px;
+  }
+
+  .auth__resend {
     font-size: 14px;
   }
 
