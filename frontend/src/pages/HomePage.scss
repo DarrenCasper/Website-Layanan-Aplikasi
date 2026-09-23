@@ -1,0 +1,53 @@
+@use '../styles/variables' as v;
+
+// Logged-in landing view. Reuses the auth tokens and wave pattern so the first
+// screen after signing in belongs to the same visual family as the auth screens.
+// The logged-out state is the untouched `Hellow world` heading, which this file
+// deliberately does not style.
+.home {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 100svh;
+  padding: 40px 24px;
+  background-color: v.$auth-bg;
+  background-image: url('../assets/auth-pattern.png');
+  background-repeat: repeat;
+  background-position: top left;
+  background-size: 200px 40px;
+  color: v.$auth-text;
+  font-family: v.$font-auth;
+  text-align: center;
+}
+
+.home__greeting {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.home__meta {
+  margin: 0;
+  color: v.$auth-text-muted;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.home__logout {
+  margin-top: 8px;
+  padding: 16px 40px;
+  border: 0;
+  border-radius: v.$auth-radius-field;
+  background: v.$auth-text;
+  color: v.$auth-bg;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}

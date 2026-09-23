@@ -5,11 +5,14 @@ import '@fontsource/inter/400.css'
 import '@fontsource/inter/700.css'
 import './index.scss'
 import App from './App.tsx'
+import AuthProvider from './context/AuthProvider.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
 )
