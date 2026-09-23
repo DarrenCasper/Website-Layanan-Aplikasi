@@ -23,6 +23,15 @@ services:
       PMA_HOST: mysql_db
     depends_on:
       - mysql_db
+  api_app:
+    build: .
+    env_file:
+      - .env
+    environment:
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
 
 volumes:
   mysql_data:
