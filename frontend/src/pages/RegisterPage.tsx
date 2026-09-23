@@ -103,7 +103,7 @@ function RegisterPage() {
         </div>
 
         <button className="auth__submit" type="submit">
-          Next ->
+          Next {'->'}
         </button>
       </form>
     </AuthLayout>
