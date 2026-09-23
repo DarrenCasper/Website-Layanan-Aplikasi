@@ -181,6 +181,35 @@
   font-weight: 700;
   line-height: normal;
   cursor: pointer;
+
+  // Every auth form disables its submit while a request is in flight, so the
+  // dimmed treatment lives here once rather than per page.
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// Inline feedback for a rejected request. The backend's own message is rendered
+// here verbatim, so the styling has to survive arbitrary sentence lengths.
+.auth__error {
+  margin: 0;
+  width: 100%;
+  color: v.$auth-danger;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+// Inline feedback for something that succeeded but needs acknowledging, such as
+// a resent OTP.
+.auth__notice {
+  margin: 0;
+  width: 100%;
+  color: v.$auth-notice;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 .auth__footer {
@@ -306,6 +335,11 @@
   .auth__submit {
     height: 56px;
     font-size: 18px;
+  }
+
+  .auth__error,
+  .auth__notice {
+    font-size: 14px;
   }
 
   .auth__footer {

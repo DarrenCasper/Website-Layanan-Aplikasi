@@ -74,6 +74,10 @@ export type ResetResultBody = {
 // the backend sends on a real password change.
 export const RESET_PASSWORD_SUCCESS_MESSAGE = 'Password succesfully changed'
 
+// The backend rejects any registration email outside this domain, so the form
+// checks it up front rather than spending a round trip on a guaranteed failure.
+export const ITS_STUDENT_EMAIL_DOMAIN = '@student.its.ac.id'
+
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
@@ -162,4 +166,16 @@ export function requestPasswordReset(body: ResetRequestBody): Promise<MessageRes
 /** POST /reset/result - check the returned message, not the status. */
 export function resetPassword(body: ResetResultBody): Promise<MessageResponse> {
   return request<MessageResponse>('/reset/result', { method: 'POST', body })
+}
+
+/**
+ * Turns a thrown value into something worth showing the user. ApiError already
+ * carries the backend's own wording, so anything else is genuinely unexpected.
+ */
+export function toErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    return error.message
+  }
+
+  return 'Terjadi kesalahan tak terduga. Silakan coba lagi.'
 }

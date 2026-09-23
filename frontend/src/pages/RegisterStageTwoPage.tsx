@@ -1,17 +1,70 @@
-import type { ChangeEvent, FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
 import { useRegisterForm } from '../context/registerFormContext'
+import { useAuth } from '../context/authContext'
+import { registerUser, toErrorMessage } from '../lib/api'
 import registerHero from '../assets/register-hero.jpg'
 
 function RegisterStageTwoPage() {
+  const navigate = useNavigate()
+  const { login } = useAuth()
   const { values, setField } = useRegisterForm()
+
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fullName = values.fullName.trim()
   const hasFaculty = values.faculty.trim() !== ''
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+
+    if (isSubmitting) {
+      return
+    }
+
+    const faculty = values.faculty.trim()
+    const department = values.department.trim()
+
+    if (faculty === '' || department === '') {
+      setError('Fakultas dan departemen wajib diisi.')
+      return
+    }
+
+    // Reaching this page without stage 1 data (a direct link, or a reload) would
+    // send the backend a request it can only reject, so say so plainly instead.
+    if (
+      fullName === '' ||
+      values.email.trim() === '' ||
+      values.password === '' ||
+      values.username.trim() === ''
+    ) {
+      setError('Data langkah pertama belum lengkap. Kembali ke langkah sebelumnya.')
+      return
+    }
+
+    setError('')
+    setIsSubmitting(true)
+
+    try {
+      // The backend field names differ from the form's own names for three of the
+      // six values, so the mapping is spelled out rather than spread.
+      const { token, user } = await registerUser({
+        email: values.email.trim(),
+        password: values.password,
+        fullname: fullName,
+        username: values.username.trim(),
+        department,
+        fakultas: faculty,
+      })
+
+      login(token, user)
+      navigate('/', { replace: true })
+    } catch (caught) {
+      setError(toErrorMessage(caught))
+      setIsSubmitting(false)
+    }
   }
 
   const handleFacultyChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -78,8 +131,14 @@ function RegisterStageTwoPage() {
           />
         </div>
 
-        <button className="auth__submit" type="submit">
-          Register
+        {error ? (
+          <p className="auth__error" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        <button className="auth__submit" type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Memproses...' : 'Register'}
         </button>
       </form>
     </AuthLayout>

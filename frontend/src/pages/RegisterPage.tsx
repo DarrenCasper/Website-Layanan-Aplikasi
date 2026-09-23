@@ -1,15 +1,35 @@
-import type { ChangeEvent, FormEvent } from 'react'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
 import { useRegisterForm } from '../context/registerFormContext'
+import { ITS_STUDENT_EMAIL_DOMAIN } from '../lib/api'
 import registerHero from '../assets/register-hero.jpg'
 
 function RegisterPage() {
   const navigate = useNavigate()
   const { values, setField } = useRegisterForm()
+  const [error, setError] = useState('')
 
+  // Stage 1 only collects and checks input. The account is created in stage 2,
+  // because the backend needs the faculty and department in the same request.
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+
+    const fullName = values.fullName.trim()
+    const email = values.email.trim()
+    const username = values.username.trim()
+
+    if (fullName === '' || email === '' || values.password === '' || username === '') {
+      setError('Semua kolom wajib diisi.')
+      return
+    }
+
+    if (!email.endsWith(ITS_STUDENT_EMAIL_DOMAIN)) {
+      setError(`Email harus menggunakan alamat ITS (${ITS_STUDENT_EMAIL_DOMAIN}).`)
+      return
+    }
+
+    setError('')
     navigate('/register/step-2')
   }
 
@@ -101,6 +121,12 @@ function RegisterPage() {
             }
           />
         </div>
+
+        {error ? (
+          <p className="auth__error" role="alert">
+            {error}
+          </p>
+        ) : null}
 
         <button className="auth__submit" type="submit">
           Next {'->'}
