@@ -98,6 +98,6 @@ export const verifyAndConsumeOtp = (purpose: OtpPurpose, email: string, candidat
         }
     }
 
-    otpCache.delete(email)
+    otpCache.delete(key)
     return { success: true }
 }

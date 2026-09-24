@@ -31,6 +31,13 @@ resetRouter.post("/request", otpRequestLimiter, async (req: Request, res: Respon
 
         // switch the ttl here if want lower expired time 
         saveOtp("PASSWORD_RESET", email, otp, 10)
+        try{
+            await saveOtp("PASSWORD_RESET", email, otp, 10)
+        }
+        catch(err){
+            console.error(err)
+            return res.status(500).json({message: "Failed to save OTP"})
+        }
 
         // call function to send the OTP through the nodemailer (later)
         await sendOtpEmail(normalizedEmail, otp)
@@ -61,7 +68,7 @@ resetRouter.post("/result", async (req: Request, res: Response) => {
 
         const normalizedEmail = email.toLowerCase().trim()
 
-        const isValid = verifyAndConsumeOtp("PASSWORD_RESET", normalizedEmail, otp)
+        const isValid = await verifyAndConsumeOtp("PASSWORD_RESET", normalizedEmail, otp)
         if (!isValid.success) {
             const messages: Record<string, string> = {
                 EXPIRED: "The OTP has expired. Please request a new one.",
@@ -90,6 +97,7 @@ resetRouter.post("/result", async (req: Request, res: Response) => {
     catch (err) {
         console.error(err)
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
+            console.error(err)
             return res.status(404).json({ message: "User Account no longer existed or was deleted" })
         }
         return res.status(500).json({ message: "server internal error" })

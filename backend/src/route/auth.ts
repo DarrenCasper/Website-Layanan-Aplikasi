@@ -125,7 +125,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
 
 authRouter.post("/verify-otp", async (req: Request, res: Response) => {
   try {
-    const { email, otp, purpose } = req.body
+    const { email, otp, purpose } = req.body || {}
 
     if (!email || !otp || !purpose) {
       return res.status(400).json({ message: "Email and OTP code are required" })
@@ -137,7 +137,7 @@ authRouter.post("/verify-otp", async (req: Request, res: Response) => {
       })
     }
 
-    const normalizeEmail = email.tolowerCase().trim()
+    const normalizeEmail = email.toLowerCase().trim()
 
     const result = verifyAndConsumeOtp(purpose, normalizeEmail, otp)
 
@@ -176,6 +176,10 @@ authRouter.post("/verify-otp", async (req: Request, res: Response) => {
 
         if (!user) {
           return res.status(404).json({ message: "User account not found." })
+        }
+
+        if(!process.env.JWT_SECRET){
+          return res.status(500).json({message: "JWT secret is not configured"})
         }
 
         const token = Jwt.sign(
