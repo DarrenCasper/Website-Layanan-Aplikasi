@@ -1,250 +1,517 @@
-# Layap Backend
+# Layap Backend Guide
 
-Backend API for Layap, built with Express, Prisma, and MySQL.
+Backend documentation for **Website-Layanan-Aplikasi (Layap)**.
 
-## Tech Stack
+This document describes the backend that currently exists in the repository's `backend/` directory, including local setup, environment variables, database configuration, authentication, OTP/password reset, merchant creation, and API usage.
 
-- **Runtime**: Node.js + TypeScript (`tsx`)
-- **Framework**: Express 5
-- **ORM**: Prisma 6 (MySQL)
-- **Auth**: JWT (`jsonwebtoken`) + `bcryptjs` for password hashing
-- **Database**: MySQL 8, run via Docker Compose (with phpMyAdmin for a GUI)
-- **CORS**: `cors`, origins controlled via `ALLOWED_ORIGINS`
-- **Email**: `nodemailer` (welcome email on register, OTP email on password reset)
-- **Rate limiting**: `express-rate-limit` on the OTP request endpoint
+> **Verified against the current `main` branch on 2026-09-24.**
 
-## Prerequisites
+## 1. Backend Overview
 
-- Node.js (LTS)
-- Docker + Docker Compose
+The backend is a REST API built with:
 
-## Setup
+| Component | Technology |
+|---|---|
+| Runtime | Node.js 20+ |
+| Language | TypeScript |
+| Development runner | `tsx` |
+| Framework | Express 5 |
+| ORM | Prisma 6 |
+| Database | MySQL |
+| Authentication | JWT + bcryptjs |
+| Email | Nodemailer / SMTP |
+| Rate limiting | `express-rate-limit` |
+| Containerization | Docker / Docker Compose |
+| Database GUI | phpMyAdmin |
 
-### 1. Install dependencies
+The server starts from `src/index.ts` and listens on `PORT` (default: `4000`).
+
+## 2. Backend Directory Structure
+
+```text
+backend/
+├── prisma/
+│   ├── migrations/        # Prisma migration files
+│   └── schema.prisma      # Database schema
+├── src/
+│   ├── generated/prisma/  # Generated Prisma Client (created by prisma generate)
+│   ├── lib/
+│   │   ├── db.ts          # Prisma client instance
+│   │   └── mailer.ts      # SMTP/Nodemailer functions
+│   ├── memory/
+│   │   └── otp.ts         # In-memory OTP storage and verification
+│   ├── middleware/
+│   │   ├── auth.ts        # JWT authentication middleware
+│   │   └── rateLimiter.ts # Password-reset rate limiter
+│   ├── route/
+│   │   ├── auth.ts        # Register, login, OTP verification
+│   │   ├── merchant.ts    # Merchant creation
+│   │   └── reset.ts       # Password reset flow
+│   └── index.ts            # Express application entry point
+├── .env.example            # Environment variable template
+├── Dockerfile
+├── docker-compose.yml
+├── package.json
+└── tsconfig.json
+```
+
+## 3. Requirements
+
+Install the following before starting the backend:
+
+- Node.js (LTS; the Docker image currently uses Node.js 20)
+- npm
+- Docker and Docker Compose
+- A Gmail/SMTP account if email features are required
+
+## 4. Local Environment Setup
+
+### 4.1 Install dependencies
+
+From the `backend/` directory:
 
 ```bash
 npm install
 ```
 
-### 2. Copy the environment file
+### 4.2 Create the environment file
 
 ```bash
 cp .env.example .env
 ```
 
-Then fill in `.env` with your own values:
+Update `.env` with real values. Do not commit the real `.env` file or any SMTP/JWT credentials.
 
-| Variable              | Description                                              |
-|-----------------------|------------------------------------------------------------|
-| `PORT`                | Port the API server listens on (default `4000`)          |
-| `NODE_ENV`            | `development` or `production`                             |
-| `MYSQL_ROOT_PASSWORD` | Root password for the MySQL container                     |
-| `MYSQL_DATABASE`      | Database name to create                                    |
-| `MYSQL_USER`          | App DB user (created automatically by the MySQL container) |
-| `MYSQL_PASSWORD`      | Password for `MYSQL_USER`                                  |
-| `DATABASE_URL`        | Full Prisma connection string, must match the 4 vars above (`mysql://MYSQL_USER:MYSQL_PASSWORD@localhost:3306/MYSQL_DATABASE`) |
-| `JWT_TOKEN`           | Secret used to sign/verify login JWTs                      |
-| `SMTP_HOST`           | SMTP server host, e.g. `smtp.gmail.com`                    |
-| `SMTP_PORT`           | SMTP server port (default `587`)                           |
-| `SMTP_USER`           | SMTP account username                                      |
-| `SMTP_PASS`           | SMTP account password / app password                       |
-| `SMTP_FROM`           | `From` header used on outgoing emails, e.g. `"ITS App <noreply@its.ac.id>"` |
-| `ALLOWED_ORIGINS`     | Comma-separated list of allowed CORS origins, e.g. `http://localhost:5173,https://layap.app`. Use `*` to allow any origin (dev only). **Required** — the server throws on startup if unset. |
+### 4.3 Environment variables
 
-### 3. Start the database
+| Variable | Required | Purpose |
+|---|---:|---|
+| `PORT` | Yes | Port used by Express; defaults to `4000` |
+| `NODE_ENV` | Yes | `development` / `production`; controls development error details |
+| `MYSQL_ROOT_PASSWORD` | Yes | MySQL root password used by Docker |
+| `MYSQL_DATABASE` | Yes | MySQL database name |
+| `MYSQL_USER` | Yes | Application database user |
+| `MYSQL_PASSWORD` | Yes | Application database password |
+| `DATABASE_URL` | Yes | Prisma MySQL connection string |
+| `JWT_TOKEN` | Yes | JWT signing/verifying secret used by normal login/auth middleware |
+| `SMTP_HOST` | Yes for email | SMTP host, normally `smtp.gmail.com` |
+| `SMTP_PORT` | Yes for email | SMTP port, normally `587` |
+| `SMTP_USER` | Yes for email | SMTP account address |
+| `SMTP_PASS` | Yes for email | SMTP password or Gmail App Password |
+| `SMTP_FROM` | Optional | Intended sender address for outgoing mail |
+| `ALLOWED_ORIGINS` | Yes | Comma-separated CORS origins; the server exits during startup when missing |
 
-From this `backend/` folder (important — Docker Compose only picks up `.env` from the directory you run it in):
+Example development configuration:
+
+```env
+PORT=4000
+NODE_ENV=development
+
+MYSQL_ROOT_PASSWORD=replace_me
+MYSQL_DATABASE=my_db
+MYSQL_USER=my_user
+MYSQL_PASSWORD=replace_me
+DATABASE_URL=mysql://my_user:replace_me@localhost:3306/my_db
+
+JWT_TOKEN=replace_with_a_long_random_secret
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-16-character-gmail-app-password
+SMTP_FROM=ITS App <your-email@gmail.com>
+
+ALLOWED_ORIGINS=http://localhost:5173
+```
+
+## 5. Start MySQL and phpMyAdmin
+
+From the `backend/` directory:
 
 ```bash
 docker compose up -d
 ```
 
-This starts:
-- **MySQL** on `localhost:3306`
-- **phpMyAdmin** on [http://localhost:8080](http://localhost:8080) (login with your `MYSQL_USER` / `MYSQL_PASSWORD`, or root)
+The current Compose file defines:
 
-### 4. Grant Prisma Migrate permissions
+| Service | Container | Host port |
+|---|---|---:|
+| MySQL | `mysql_server` | `3306` |
+| phpMyAdmin | `phpmyadmin_server` | `8080` |
+| API container | `api_app` | No host port mapping currently defined |
 
-The MySQL image only grants `MYSQL_USER` privileges on `MYSQL_DATABASE` by default. Prisma Migrate also needs to create/drop a temporary **shadow database** to compute migration diffs, so run this once after the container is up:
+phpMyAdmin is available at:
 
-```bash
-docker exec -it mysql_server mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "GRANT ALL PRIVILEGES ON *.* TO '<MYSQL_USER>'@'%' WITH GRANT OPTION; FLUSH PRIVILEGES;"
+```text
+http://localhost:8080
 ```
 
-Replace `<MYSQL_USER>` with the value from your `.env`.
+The application connects to MySQL through `DATABASE_URL`.
 
-### 5. Run migrations
+## 6. Prisma Setup
+
+The Prisma schema uses MySQL:
+
+```prisma
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+```
+
+After the database is running, generate the Prisma Client:
+
+```bash
+npx prisma generate
+```
+
+Apply/create development migrations with:
 
 ```bash
 npx prisma migrate dev
 ```
 
-This applies the schema in `prisma/schema.prisma` and generates the Prisma Client into `src/generated/prisma`.
+Useful commands:
 
-### 6. Start the dev server
+```bash
+npx prisma generate
+npx prisma migrate dev
+npx prisma validate
+npx prisma studio
+```
+
+`prisma/schema.prisma` is the source of truth for the database model.
+
+### Prisma data model
+
+```text
+User
+ └──< MerchantMember >── Merchant
+
+MerchantMember.role:
+ ├── OWNER
+ └── STAFF
+
+Merchant.status:
+ ├── PENDING
+ ├── ACTIVE
+ └── SUSPENDED
+```
+
+### Main models
+
+#### User
+
+- `id`: derived from the part before `@` in the ITS student email (NRP)
+- `email`: unique
+- `passwordHashed`: bcrypt hash
+- `namaLengkap`
+- `username`: unique
+- `departemen`
+- `fakultas`
+- `isAdmin`
+- `isVerified`
+- `createdAt`
+- `updatedAt`
+
+#### Merchant
+
+- `id`: CUID
+- `namaToko`
+- `deskripsi`: optional
+- `status`: `PENDING`, `ACTIVE`, or `SUSPENDED`
+- `createdAt`
+
+#### MerchantMember
+
+- `id`: CUID
+- `userId`
+- `merchantId`
+- `role`: `OWNER` or `STAFF`
+- `joinedAt`
+- Unique constraint on `(userId, merchantId)`
+
+## 7. Running the Backend
+
+Start the backend in development mode:
 
 ```bash
 npm run dev
 ```
 
-Server runs on `http://localhost:<PORT>` (default `4000`) with hot reload via `tsx watch`.
+The `dev` script runs:
 
-## Useful Prisma commands
-
-| Command                        | What it does                                              |
-|---------------------------------|------------------------------------------------------------|
-| `npx prisma migrate dev`       | Create/apply a migration from schema changes (dev only)   |
-| `npx prisma generate`          | Regenerate the Prisma Client without running a migration  |
-| `npx prisma studio`            | Open a GUI to browse/edit database rows                    |
-| `npx prisma validate`          | Check `schema.prisma` for syntax/semantic errors            |
-
-## Data Model
-
-See [prisma/schema.prisma](prisma/schema.prisma) for the source of truth. Summary:
-
-- **User** — `id` is the NRP (ITS student number), sliced from the ITS email, not auto-generated.
-- **Merchant** — a store, with a `status` (`PENDING` / `ACTIVE` / `SUSPENDED`).
-- **MerchantMember** — join table linking a `User` to a `Merchant` with a `role` (`OWNER` / `STAFF`). A user can only have one role per merchant.
-
-## Routes
-
-Base URL: `http://localhost:<PORT>`
-
-### `GET /health`
-
-Health check. Verifies the DB connection.
-
-```json
-// 200
-{ "status": "ok", "db": "up" }
+```bash
+tsx watch src/index.ts
 ```
 
----
+By default, the API is available at:
 
-### `POST /auth/register`
+```text
+http://localhost:4000
+```
 
-Registers a new user. Email must be a valid ITS student email (`@student.its.ac.id`) — the part before `@` becomes the user's `id` (NRP).
+Basic checks:
 
-**Body**
+```bash
+curl http://localhost:4000/
+curl http://localhost:4000/health
+```
+
+The root endpoint returns:
+
 ```json
 {
-  "email": "5024241006@student.its.ac.id",
+  "message": "API is running..."
+}
+```
+
+The health endpoint checks the database connection and returns an `ok` response when MySQL is reachable.
+
+## 8. API Endpoints
+
+### Base URL
+
+```text
+http://localhost:4000
+```
+
+The backend does **not** mount its routes under `/api`. The frontend development server uses `/api` only as a proxy prefix and rewrites it away before forwarding requests to the backend.
+
+### Endpoint summary
+
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| GET | `/` | No | API status |
+| GET | `/health` | No | Database health check |
+| GET | `/test-email` | No | SMTP test email |
+| POST | `/auth/register` | No | Register a new ITS student user |
+| POST | `/auth/login` | No | Login with email/password |
+| POST | `/auth/verify-otp` | No | Verify an OTP for supported purposes |
+| POST | `/reset/request` | No | Request password-reset OTP |
+| POST | `/reset/result` | No | Verify reset OTP and change password |
+| POST | `/create/merchant` | Bearer JWT | Create a merchant and assign caller as owner |
+
+## 9. Authentication
+
+Normal authentication uses JWT.
+
+The login and registration handlers sign tokens with `JWT_TOKEN` and a seven-day expiration.
+
+Protected requests must include:
+
+```http
+Authorization: Bearer <jwt>
+```
+
+The `requireAuth` middleware validates the token using `JWT_TOKEN`. A valid token must contain a `sub` claim containing the user ID.
+
+Typical authentication errors:
+
+| Status | Meaning |
+|---:|---|
+| `401` | Missing or malformed Authorization header |
+| `401` | Missing token |
+| `401` | Expired token |
+| `401` | Invalid token/signature |
+| `500` | `JWT_TOKEN` is not configured |
+
+## 10. Registration
+
+### Request
+
+```http
+POST /auth/register
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "1234567890@student.its.ac.id",
   "password": "secret123",
-  "fullname": "Darren Dexter Thio",
-  "username": "DarrenCasper",
+  "fullname": "Example Student",
+  "username": "example",
   "department": "Teknik Komputer",
   "fakultas": "FTEIC"
 }
 ```
 
-**Response `201`**
+Requirements enforced by the current implementation:
+
+- All fields are required.
+- Email must end with `@student.its.ac.id`.
+- The part before `@` becomes the user's database `id`.
+- Password is hashed using bcrypt before storage.
+- Email and username are unique.
+
+Successful response (`201`):
+
 ```json
 {
   "token": "<jwt>",
   "user": {
-    "id": "5024241006",
-    "email": "5024241006@student.its.ac.id",
-    "fullname": "Darren Dexter Thio",
-    "username": "DarrenCasper",
+    "id": "1234567890",
+    "email": "1234567890@student.its.ac.id",
+    "fullname": "Example Student",
+    "username": "example",
     "department": "Teknik Komputer",
     "fakultas": "FTEIC",
-    "createdAt": "2026-01-01T00:00:00.000Z"
+    "createdAt": "..."
   }
 }
 ```
 
-**Errors**:
-- `400` if any field is missing, or if the email isn't an ITS student email.
-- `409` if the email or username is already taken.
+## 11. Login
 
----
+### Request
 
-### `POST /auth/login`
+```http
+POST /auth/login
+Content-Type: application/json
+```
 
-**Body**
 ```json
 {
-  "email": "5024241006@student.its.ac.id",
+  "email": "1234567890@student.its.ac.id",
   "password": "secret123"
 }
 ```
 
-**Response `200`**: same shape as register (`token` + `user`).
+Successful response (`200`):
 
-**Errors**: `400` on missing fields or invalid credentials.
-
----
-
-### `POST /reset/request`
-
-Requests a password-reset OTP. Always returns a generic success message, whether or not the email exists, to avoid leaking which emails are registered. Rate-limited to 5 requests per 15 minutes per IP.
-
-**Body**
 ```json
 {
-  "email": "5024241006@student.its.ac.id"
+  "token": "<jwt>",
+  "user": {
+    "id": "1234567890",
+    "email": "1234567890@student.its.ac.id",
+    "fullname": "Example Student",
+    "username": "example",
+    "department": "Teknik Komputer",
+    "fakultas": "FTEIC",
+    "createdAt": "..."
+  }
 }
 ```
 
-**Response `200`**
-```json
-{ "message": "If that email exist in our system, an OTP has been sent." }
+Invalid or incomplete credentials currently return `400` with an `Invalid Credentials` or validation message.
+
+## 12. OTP and Password Reset
+
+OTP data is stored **in memory**, not in MySQL/Redis. Each OTP record contains a SHA-256 hash, expiry timestamp, and failed-attempt counter.
+
+Current OTP rules:
+
+- OTP is six digits for password reset.
+- Password-reset OTP lifetime is 10 minutes.
+- OTP is single-use after successful verification.
+- An OTP is removed after 5 incorrect attempts.
+- Expired OTPs are removed during verification and periodic cleanup.
+
+### Request password reset OTP
+
+```http
+POST /reset/request
+Content-Type: application/json
 ```
 
-If the email exists, a 6-digit OTP (valid for 10 minutes) is emailed to it via `sendOtpEmail`.
-
-**Errors**:
-- `400` if `email` is missing.
-- `429` if the rate limit is exceeded.
-
----
-
-### `POST /reset/result`
-
-Verifies the OTP and sets a new password.
-
-**Body**
 ```json
 {
-  "email": "5024241006@student.its.ac.id",
+  "email": "1234567890@student.its.ac.id"
+}
+```
+
+The endpoint intentionally returns a generic response whether the account exists:
+
+```json
+{
+  "message": "If that email exist in our system, an OTP has been sent."
+}
+```
+
+The request endpoint is rate-limited to **5 requests per 15 minutes per IP**.
+
+### Complete password reset
+
+```http
+POST /reset/result
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "1234567890@student.its.ac.id",
   "otp": "123456",
   "newPassword": "newSecret123"
 }
 ```
 
-**Response `200`**
+The new password must contain at least 8 characters.
+
+Successful response:
+
 ```json
-{ "message": "Password succesfully changed" }
+{
+  "message": "Password succesfully changed"
+}
 ```
 
-**Errors**:
-- `400` if any field is missing.
-- `200` (not an error status, but not a successful reset either) if the OTP is wrong, expired, exceeded the per-OTP attempt limit (5), or no OTP was requested — with a message specific to the reason (`Incorrect OTP code`, `The OTP has expired...`, `Too many incorrect attempts...`, `No reset found on this account`). Check the `message` field, not the HTTP status, to detect this case.
-- `400` if the account no longer exists (`User Account no longer existed or was deleted`).
+Incorrect, expired, missing, or exhausted OTPs produce an error response. The client should check both the HTTP status and the `message` field returned by the backend.
 
-An OTP is single-use: it's consumed on the first successful verification and cannot be reused.
+## 13. OTP Verification Endpoint
 
----
+General OTP verification is exposed through:
 
-### `POST /create/merchant` 🔒
-
-Creates a new merchant/store and makes the caller its `OWNER`. Requires authentication.
-
-**Headers**
+```http
+POST /auth/verify-otp
+Content-Type: application/json
 ```
+
+Body:
+
+```json
+{
+  "email": "1234567890@student.its.ac.id",
+  "otp": "123456",
+  "purpose": "REGISTRATION"
+}
+```
+
+Supported purposes in the backend are:
+
+```text
+REGISTRATION
+PASSWORD_RESET
+LOGIN_2FA
+```
+
+The current route handles `REGISTRATION` and `LOGIN_2FA`; password-reset verification is handled by `/reset/result`.
+
+## 14. Merchant Creation
+
+Creating a merchant requires a valid JWT.
+
+### Request
+
+```http
+POST /create/merchant
 Authorization: Bearer <jwt>
+Content-Type: application/json
 ```
 
-**Body**
 ```json
 {
   "namaToko": "Warung Test",
   "deskripsi": "A test store"
 }
 ```
+
 `deskripsi` is optional.
 
-**Response `201`**
+The authenticated user is automatically inserted into `MerchantMember` with the `OWNER` role.
+
+Successful response (`201`):
+
 ```json
 {
   "message": "Merchant succesfully Created",
@@ -257,40 +524,267 @@ Authorization: Bearer <jwt>
     "members": [
       {
         "id": "...",
-        "userId": "5024241006",
+        "userId": "1234567890",
         "merchantId": "...",
         "role": "OWNER",
         "joinedAt": "...",
-        "user": { "id": "5024241006", "namaLengkap": "...", "email": "..." }
+        "user": {
+          "id": "1234567890",
+          "namaLengkap": "Example Student",
+          "email": "1234567890@student.its.ac.id"
+        }
       }
     ]
   }
 }
 ```
 
-**Errors**: `401` if `namaToko` is missing or the token is missing/invalid.
+## 15. Email / SMTP
 
-## Auth
+Nodemailer is used for:
 
-Protected routes use the `requireAuth` middleware ([src/middleware/auth.ts](src/middleware/auth.ts)), which expects:
+- Welcome email after registration
+- Password-reset OTP email
+- Manual `/test-email` verification
 
+For Gmail, use a Google **App Password** rather than the normal account password.
+
+Test SMTP configuration with:
+
+```text
+GET /test-email
 ```
-Authorization: Bearer <jwt>
+
+A successful response contains a message ID:
+
+```json
+{
+  "status": "success",
+  "messageId": "..."
+}
 ```
 
-The JWT is verified against `JWT_TOKEN` from `.env`. On success, it attaches the user's id to `req.userId` (type augmentation in [src/types/express.d.ts](src/types/express.d.ts)).
+Email failures are logged by the server. The welcome-email helper is deliberately non-blocking so a registration can still complete if email sending fails.
 
-Failure responses from `requireAuth`:
+## 16. CORS
 
-| Status | When |
-|---|---|
-| `401 "Invalid Authorization Header"` | No `Authorization` header sent |
-| `401 "Invalid Authorization Header, Expected Bearer <token>"` | Header doesn't start with `Bearer ` |
-| `401 "Missing Token"` | Header is `Bearer ` with nothing after it |
-| `401 "Token have expired"` | JWT has expired |
-| `401 "Invalid Token"` | JWT is malformed or signature doesn't match |
-| `500 "JWT_TOKEN is not provided yet in .env"` | Server misconfiguration — `.env` missing `JWT_TOKEN` |
+The server reads `ALLOWED_ORIGINS` from `.env` and splits it by commas.
 
-## CORS
+Example:
 
-Cross-origin requests are controlled by `ALLOWED_ORIGINS` in `.env` (comma-separated). The server refuses to start if this variable isn't set. For local frontend development, set it to your frontend's dev server URL (or `*` to allow everything while prototyping).
+```env
+ALLOWED_ORIGINS=http://localhost:5173,https://example.com
+```
+
+For temporary local development, the project also supports:
+
+```env
+ALLOWED_ORIGINS=*
+```
+
+Do not use a wildcard in a production deployment unless that is an intentional security decision.
+
+## 17. Testing and Linting
+
+The available npm scripts are:
+
+```bash
+npm run dev
+npm test
+npm run lint
+```
+
+`npm test` runs Vitest in non-watch mode.
+
+## 18. Running Frontend + Backend Together
+
+The repository contains a root-level `dev.sh` helper.
+
+From the repository root:
+
+```bash
+./dev.sh
+```
+
+Current development ports:
+
+```text
+Frontend: http://localhost:5173
+Backend:  http://localhost:4000
+```
+
+The script can also show status or stop the development services:
+
+```bash
+./dev.sh --status
+./dev.sh --stop
+```
+
+The script checks the backend health endpoint and uses port/process detection to avoid accidentally talking to an old backend process.
+
+Logs are written to:
+
+```text
+.dev-logs/backend.log
+.dev-logs/frontend.log
+```
+
+On a fresh clone, `dev.sh` also generates the Prisma Client when `src/generated/prisma/client.ts` does not exist.
+
+## 19. Docker Notes
+
+`Dockerfile` currently uses:
+
+```dockerfile
+FROM node:20-alpine
+```
+
+and runs:
+
+```bash
+npm run dev
+```
+
+The Dockerfile declares `EXPOSE 8000`, while the Express application defaults to port `4000`. The current `docker-compose.yml` also does not publish an `api_app` host port. Therefore, the Docker setup currently functions primarily as a database/email-enabled application container definition rather than a ready-to-access host-published API container.
+
+For normal local development, use `npm run dev` on the host or `./dev.sh`.
+
+## 20. Important Implementation Notes
+
+### JWT secret naming inconsistency
+
+There are currently two JWT environment variable names in the code:
+
+- `JWT_TOKEN` is used by registration/login and `requireAuth`.
+- `JWT_SECRET` is used by the `LOGIN_2FA` branch of `/auth/verify-otp`.
+
+The `.env.example` only defines `JWT_TOKEN`.
+
+Before relying on the 2FA login flow, the JWT configuration should be unified so all generated tokens use the same secret and compatible payload fields expected by `requireAuth`.
+
+### JWT payload inconsistency
+
+Normal login/registration tokens contain:
+
+```json
+{
+  "sub": "<user-id>",
+  "email": "<email>"
+}
+```
+
+The `LOGIN_2FA` branch currently signs:
+
+```json
+{
+  "userId": "<user-id>",
+  "email": "<email>"
+}
+```
+
+Since `requireAuth` reads `payload.sub`, the two token formats are not currently interchangeable.
+
+### Registration OTP flow
+
+The OTP module supports a `REGISTRATION` purpose and `/auth/verify-otp` contains registration-verification logic. However, the currently exposed registration route does not itself create a registration OTP. The registration flow therefore should be reviewed before documenting it as a complete email-verification workflow.
+
+### In-memory OTP storage
+
+Because OTP records are stored in a JavaScript `Map`, they disappear whenever the backend restarts and are not shared between multiple backend instances. This is suitable for a simple single-instance development setup, but a persistent/shared store such as Redis would be needed for a multi-instance production deployment.
+
+### Health status code
+
+`GET /health` returns HTTP `201` when the database is available in the current implementation. The response body is still:
+
+```json
+{
+  "status": "ok",
+  "db": "up"
+}
+```
+
+A conventional health-check endpoint would normally use `200`; changing this is optional but should be coordinated with frontend/monitoring checks.
+
+## 21. Development Workflow
+
+A typical backend development workflow is:
+
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Edit .env
+
+docker compose up -d
+npx prisma generate
+npx prisma migrate dev
+npm run dev
+```
+
+Then verify:
+
+```bash
+curl http://localhost:4000/
+curl http://localhost:4000/health
+```
+
+For changes to the Prisma schema:
+
+```bash
+# edit prisma/schema.prisma
+npx prisma migrate dev --name describe_your_change
+npx prisma generate
+```
+
+For backend code changes, `tsx watch` automatically restarts the development server.
+
+## 22. API Flow Summary
+
+```text
+                    ┌──────────────────┐
+                    │     Frontend     │
+                    └────────┬─────────┘
+                             │ HTTP/JSON
+                             ▼
+                    ┌──────────────────┐
+                    │ Express Backend  │
+                    │   src/index.ts   │
+                    └────────┬─────────┘
+                             │
+          ┌──────────────────┼────────────────────┐
+          │                  │                    │
+          ▼                  ▼                    ▼
+     /auth/*           /create/*             /reset/*
+          │                  │                    │
+          ▼                  ▼                    ▼
+     JWT + bcrypt       requireAuth        OTP + bcrypt
+          │                  │                    │
+          └──────────────────┼────────────────────┘
+                             ▼
+                     ┌────────────────┐
+                     │     Prisma     │
+                     └───────┬────────┘
+                             ▼
+                      ┌──────────────┐
+                      │    MySQL     │
+                      └──────────────┘
+
+                      ┌──────────────┐
+                      │  Nodemailer  │
+                      │     SMTP     │
+                      └──────────────┘
+```
+
+## 23. Related Files
+
+- [`backend/src/index.ts`](./src/index.ts) — Express application and route registration
+- [`backend/src/route/auth.ts`](./src/route/auth.ts) — Authentication and OTP verification
+- [`backend/src/route/merchant.ts`](./src/route/merchant.ts) — Merchant creation
+- [`backend/src/route/reset.ts`](./src/route/reset.ts) — Password reset
+- [`backend/src/middleware/auth.ts`](./src/middleware/auth.ts) — JWT authentication middleware
+- [`backend/src/memory/otp.ts`](./src/memory/otp.ts) — OTP storage/verification
+- [`backend/src/lib/db.ts`](./src/lib/db.ts) — Prisma client
+- [`backend/src/lib/mailer.ts`](./src/lib/mailer.ts) — Nodemailer helpers
+- [`backend/prisma/schema.prisma`](./prisma/schema.prisma) — Database schema
+- [`backend/docker-compose.yml`](./docker-compose.yml) — MySQL/phpMyAdmin/API containers
+- [`backend/.env.example`](./.env.example) — Environment template
