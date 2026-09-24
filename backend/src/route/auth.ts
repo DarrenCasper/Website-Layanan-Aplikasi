@@ -178,13 +178,13 @@ authRouter.post("/verify-otp", async (req: Request, res: Response) => {
           return res.status(404).json({ message: "User account not found." })
         }
 
-        if(!process.env.JWT_SECRET){
+        if(!process.env.JWT_TOKEN){
           return res.status(500).json({message: "JWT secret is not configured"})
         }
 
         const token = Jwt.sign(
           { userId: user.id, email: user.email },
-          process.env.JWT_SECRET!,
+          process.env.JWT_TOKEN!,
           { expiresIn: "7d" }
         )
 
