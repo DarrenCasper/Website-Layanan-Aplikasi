@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
-import Jwt, { verify } from "jsonwebtoken";
+import Jwt from "jsonwebtoken";
 import { prisma } from "../lib/db.ts";
 import { sendWelcomeEmail } from "../lib/mailer.ts";
 import { Prisma } from "../generated/prisma/client.ts";

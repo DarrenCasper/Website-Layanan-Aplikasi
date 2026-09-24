@@ -1,6 +1,4 @@
-import e from "cors";
 import { createHash, timingSafeEqual } from "node:crypto"
-import { buffer } from "node:stream/consumers";
 
 
 // Define OTP purpose (3 types in this case): login/register/reset password

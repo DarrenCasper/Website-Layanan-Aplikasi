@@ -6,7 +6,6 @@ import { saveOtp, verifyAndConsumeOtp } from "../memory/otp.ts";
 import { sendOtpEmail } from "../lib/mailer.ts"
 import { Prisma } from "../generated/prisma/client.ts";
 import { otpRequestLimiter } from "../middleware/rateLimiter.ts"
-import { stat } from "fs";
 
 const resetRouter = Router()
 
