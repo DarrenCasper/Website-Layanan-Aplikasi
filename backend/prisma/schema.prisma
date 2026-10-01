@@ -58,6 +58,27 @@ enum MerchantRole { // can add more role here if needed (depends)
   STAFF
 }
 
+model Product {
+  id String @id @default(autoincrement()) 
+  merchantId String
+  name String
+  price Int @default(0)
+}
+
+model ProductTag {
+  productId string @id @default(cuid())
+  tagId string
+  product Product @relation(fields:[productId], references: [id])
+  tag Tag @relation(fields: [tagId], references: [id]) 
+  @@id([productId, tagId], name: "id")
+}
+
+model Tag {
+  id string @default(autoincrement())
+  tagName string
+}
+
+
 enum MerchantStatus {
   PENDING
   ACTIVE
