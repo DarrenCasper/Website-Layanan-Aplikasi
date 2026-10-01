@@ -53,6 +53,57 @@ model MerchantMember {
   @@unique([userId, merchantId]) // make sure no same people from the same merchant have 2 different role
 }
 
+model Product {
+  id String @id @default(cuid())
+  merchantId String
+  name String
+  price Int @default(0)
+  stock Int @default(0)
+  productTags ProductTag[]
+
+  @@index([merchantId])
+  @@index([name])
+}
+
+model Service {
+  id String @id @default(cuid())
+  merchantId String
+  name String
+  price Int @default(0)
+  durationMin Int @default(0)
+  serviceTags ServiceTag[]
+
+  @@index([merchantId])
+  @@index([name])
+}
+
+model Tag {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  productTags ProductTag[]
+  serviceTags ServiceTag[]
+}
+
+// Join table for Products
+model ProductTag {
+  productId String
+  tagId     String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([productId, tagId])
+}
+
+// Join table for Services
+model ServiceTag {
+  serviceId String
+  tagId     String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([serviceId, tagId])
+}
+
 enum MerchantRole { // can add more role here if needed (depends)
   OWNER
   STAFF
