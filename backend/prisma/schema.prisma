@@ -38,6 +38,8 @@ model Merchant {
   createdAt DateTime @default(now())
 
   members MerchantMember[]
+  products Product[]
+  services Service[]
 }
 
 model MerchantMember {
@@ -59,6 +61,9 @@ model Product {
   name String
   price Int @default(0)
   stock Int @default(0)
+  description String? @db.Text
+
+  merchant Merchant @relation(fields: [merchantId], references: [id])
   productTags ProductTag[]
 
   @@index([merchantId])
@@ -71,7 +76,10 @@ model Service {
   name String
   price Int @default(0)
   durationMin Int @default(0)
+  description String?
   serviceTags ServiceTag[]
+
+  merchant Merchant @relation(fields: [merchantId], references: [id])
 
   @@index([merchantId])
   @@index([name])
