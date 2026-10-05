@@ -2,9 +2,9 @@
 
 Backend documentation for **Website-Layanan-Aplikasi (Layap)**.
 
-This document describes the backend that currently exists in the repository's `backend/` directory, including local setup, environment variables, database configuration, authentication, OTP/password reset, merchant creation, and API usage.
+This document describes the backend that currently exists in the repository's `backend/` directory, including local setup, environment variables, database configuration, authentication, OTP/password reset, merchant creation, the product/service catalog, and API usage.
 
-> **Verified against the current `main` branch on 2026-09-24.**
+> **Verified against the current `main` branch on 2026-10-05.**
 
 ## 1. Backend Overview
 
@@ -41,11 +41,13 @@ backend/
 │   ├── memory/
 │   │   └── otp.ts         # In-memory OTP storage and verification
 │   ├── middleware/
-│   │   ├── auth.ts        # JWT authentication middleware
-│   │   └── rateLimiter.ts # Password-reset rate limiter
+│   │   ├── auth.ts             # JWT authentication middleware
+│   │   ├── merchantAccess.ts   # Verifies caller is OWNER/STAFF of :merchantId
+│   │   └── rateLimiter.ts      # Password-reset rate limiter
 │   ├── route/
 │   │   ├── auth.ts        # Register, login, OTP verification
 │   │   ├── merchant.ts    # Merchant creation
+│   │   ├── catalog.ts     # Product/service catalog (search, create, update, delete)
 │   │   └── reset.ts       # Password reset flow
 │   └── index.ts            # Express application entry point
 ├── .env.example            # Environment variable template
@@ -186,7 +188,8 @@ npx prisma studio
 
 ```text
 User
- └──< MerchantMember >── Merchant
+ └──< MerchantMember >── Merchant ──< Product >──< ProductTag >── Tag
+                                 └──< Service >──< ServiceTag >── Tag
 
 MerchantMember.role:
  ├── OWNER
@@ -230,6 +233,21 @@ Merchant.status:
 - `role`: `OWNER` or `STAFF`
 - `joinedAt`
 - Unique constraint on `(userId, merchantId)`
+
+#### Product / Service
+
+- `id`: CUID
+- `merchantId`
+- `name`
+- `price`: non-negative integer (whole currency units, no decimals)
+- `stock` (Product) / `durationMin` (Service): non-negative integer, defaults to `0`
+- `description`: optional text, `null` by default
+- Indexed on `merchantId` and `name`
+
+#### Tag / ProductTag / ServiceTag
+
+- `Tag.name` is globally unique and stored lowercased/trimmed.
+- `ProductTag` and `ServiceTag` are join tables (`@@id([productId, tagId])` / `@@id([serviceId, tagId])`) connecting a listing to a `Tag`, created via `connectOrCreate` so existing tags are reused instead of duplicated.
 
 ## 7. Running the Backend
 
@@ -291,6 +309,14 @@ The backend does **not** mount its routes under `/api`. The frontend development
 | POST | `/reset/request` | No | Request password-reset OTP |
 | POST | `/reset/result` | No | Verify reset OTP and change password |
 | POST | `/create/merchant` | Bearer JWT | Create a merchant and assign caller as owner |
+| GET | `/catalog/products` | No | Search/list products from active merchants |
+| GET | `/catalog/services` | No | Search/list services from active merchants |
+| POST | `/catalog/merchants/:merchantId/products` | Bearer JWT + membership | Create a product under a merchant |
+| POST | `/catalog/merchants/:merchantId/services` | Bearer JWT + membership | Create a service under a merchant |
+| PATCH | `/catalog/merchants/:merchantId/products/:productId` | Bearer JWT + membership | Partially update a product |
+| PATCH | `/catalog/merchants/:merchantId/services/:serviceId` | Bearer JWT + membership | Partially update a service |
+| DELETE | `/catalog/merchants/:merchantId/products/:productId` | Bearer JWT + membership | Delete a product |
+| DELETE | `/catalog/merchants/:merchantId/services/:serviceId` | Bearer JWT + membership | Delete a service |
 
 ## 9. Authentication
 
@@ -539,7 +565,139 @@ Successful response (`201`):
 }
 ```
 
-## 15. Email / SMTP
+## 15. Product & Service Catalog
+
+Products and services share the same patterns, just with `stock` (Product) swapped for `durationMin` (Service). All mutation routes require `Authorization: Bearer <jwt>` **and** that the caller is an `OWNER` or `STAFF` member of `:merchantId` (enforced by `requireMerchantAccess`); a merchant with `status: "SUSPENDED"` blocks all mutations even for its own members. `PENDING`/`ACTIVE` merchants can both be managed — only public search (below) filters by `status: "ACTIVE"`.
+
+### Search / list (public)
+
+```http
+GET /catalog/products
+GET /catalog/services
+```
+
+Query parameters (all optional):
+
+| Param | Type | Limit | Notes |
+|---|---|---|---|
+| `q` | string | ≤100 chars | Matches listing `name` or any tag `name` (substring, LIKE-escaped) |
+| `tags` | comma-separated string | ≤10 tags, each 1–20 chars | Matches listings that have **all** given tags |
+| `merchantId` | string | ≤191 chars | Restrict to one merchant |
+| `page` | integer | 1–10000 | Default `1` |
+| `limit` | integer | 1–50 | Default `20` |
+
+Only listings belonging to a merchant with `status: "ACTIVE"` are returned.
+
+Response (`200`):
+
+```json
+{
+  "data": [
+    {
+      "id": "...",
+      "merchantId": "...",
+      "name": "Kopi Susu",
+      "price": 15000,
+      "stock": 10,
+      "description": null,
+      "merchant": { "id": "...", "namaToko": "Merchant A" },
+      "productTags": [
+        { "productId": "...", "tagId": "...", "tag": { "id": "...", "name": "kopi" } }
+      ]
+    }
+  ],
+  "pagination": { "page": 1, "limit": 20, "total": 1, "totalPages": 1 }
+}
+```
+
+### Create a product or service
+
+```http
+POST /catalog/merchants/:merchantId/products
+POST /catalog/merchants/:merchantId/services
+Authorization: Bearer <jwt>
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "Kopi Susu",
+  "price": 15000,
+  "stock": 10,
+  "tags": ["minuman", "kopi"]
+}
+```
+
+(For `/services`, use `"durationMin"` instead of `"stock"`.)
+
+| Field | Required | Rules |
+|---|---:|---|
+| `name` | Yes | 1–100 characters |
+| `price` | Yes | Non-negative integer |
+| `stock` / `durationMin` | No | Non-negative integer, defaults to `0` |
+| `tags` | No | Array of ≤10 strings, each 1–20 chars; lowercased, trimmed, deduplicated |
+
+> **Known gap**: this endpoint does not currently accept `description` — a listing can only get a description afterward, via `PATCH`.
+
+Response (`201`): the created record with `merchant` and tags included, same shape as the search results above, under `{ "message": "...", "data": { ... } }`.
+
+### Update a product or service
+
+```http
+PATCH /catalog/merchants/:merchantId/products/:productId
+PATCH /catalog/merchants/:merchantId/services/:serviceId
+Authorization: Bearer <jwt>
+Content-Type: application/json
+```
+
+Send only the fields you want to change — at least one is required:
+
+```json
+{
+  "price": 20000,
+  "description": "Enak banget"
+}
+```
+
+| Field | Rules |
+|---|---|
+| `name` | 1–100 characters |
+| `description` | String ≤5000 chars, or `null` to clear it |
+| `price` | Non-negative integer |
+| `stock` / `durationMin` | Non-negative integer |
+
+Tags cannot be changed through this endpoint. Any field not in the list above is rejected with `400 "Cannot update field: <name>"`.
+
+Response (`200`): the updated record, same shape as create.
+
+### Delete a product or service
+
+```http
+DELETE /catalog/merchants/:merchantId/products/:productId
+DELETE /catalog/merchants/:merchantId/services/:serviceId
+Authorization: Bearer <jwt>
+```
+
+Response (`200`):
+
+```json
+{ "message": "Product succesfully deleted" }
+```
+
+### Catalog error responses
+
+| Status | When |
+|---:|---|
+| `400` | Validation failure (bad field type, unsupported field, body not an object, etc.) — message describes the specific problem |
+| `401` | Missing/invalid JWT (from `requireAuth`) |
+| `403` | Caller is not an `OWNER`/`STAFF` member of `:merchantId`, or the merchant is `SUSPENDED` |
+| `404` | `:productId`/`:serviceId` doesn't exist **or belongs to a different merchant than `:merchantId`** — the two cases are deliberately indistinguishable to avoid leaking cross-merchant data |
+| `409` | A tag with the same name was created by a concurrent request; retry the request |
+| `500` | Unexpected server error |
+
+The `404` behavior above was verified directly: a user who legitimately owns two merchants cannot `PATCH`/`DELETE` merchant A's product by passing merchant B's id in the URL — the Prisma `where: { id, merchantId }` compound filter returns "not found" instead of operating on the wrong merchant's row.
+
+## 16. Email / SMTP
 
 Nodemailer is used for:
 
@@ -566,7 +724,7 @@ A successful response contains a message ID:
 
 Email failures are logged by the server. The welcome-email helper is deliberately non-blocking so a registration can still complete if email sending fails.
 
-## 16. CORS
+## 17. CORS
 
 The server reads `ALLOWED_ORIGINS` from `.env` and splits it by commas.
 
@@ -584,7 +742,7 @@ ALLOWED_ORIGINS=*
 
 Do not use a wildcard in a production deployment unless that is an intentional security decision.
 
-## 17. Testing and Linting
+## 18. Testing and Linting
 
 The available npm scripts are:
 
@@ -596,7 +754,7 @@ npm run lint
 
 `npm test` runs Vitest in non-watch mode.
 
-## 18. Running Frontend + Backend Together
+## 19. Running Frontend + Backend Together
 
 The repository contains a root-level `dev.sh` helper.
 
@@ -631,7 +789,7 @@ Logs are written to:
 
 On a fresh clone, `dev.sh` also generates the Prisma Client when `src/generated/prisma/client.ts` does not exist.
 
-## 19. Docker Notes
+## 20. Docker Notes
 
 `Dockerfile` currently uses:
 
@@ -649,7 +807,7 @@ The Dockerfile declares `EXPOSE 8000`, while the Express application defaults to
 
 For normal local development, use `npm run dev` on the host or `./dev.sh`.
 
-## 20. Important Implementation Notes
+## 21. Important Implementation Notes
 
 ### JWT secret naming inconsistency
 
@@ -705,7 +863,7 @@ Because OTP records are stored in a JavaScript `Map`, they disappear whenever th
 
 A conventional health-check endpoint would normally use `200`; changing this is optional but should be coordinated with frontend/monitoring checks.
 
-## 21. Development Workflow
+## 22. Development Workflow
 
 A typical backend development workflow is:
 
@@ -738,7 +896,7 @@ npx prisma generate
 
 For backend code changes, `tsx watch` automatically restarts the development server.
 
-## 22. API Flow Summary
+## 23. API Flow Summary
 
 ```text
                     ┌──────────────────┐
@@ -751,15 +909,15 @@ For backend code changes, `tsx watch` automatically restarts the development ser
                     │   src/index.ts   │
                     └────────┬─────────┘
                              │
-          ┌──────────────────┼────────────────────┐
-          │                  │                    │
-          ▼                  ▼                    ▼
-     /auth/*           /create/*             /reset/*
-          │                  │                    │
-          ▼                  ▼                    ▼
-     JWT + bcrypt       requireAuth        OTP + bcrypt
-          │                  │                    │
-          └──────────────────┼────────────────────┘
+          ┌──────────────────┼───────────────┬────────────────┐
+          │                  │               │                │
+          ▼                  ▼               ▼                ▼
+     /auth/*           /create/*        /catalog/*        /reset/*
+          │                  │               │                │
+          ▼                  ▼               ▼                ▼
+     JWT + bcrypt       requireAuth   requireAuth +       OTP + bcrypt
+          │                  │        requireMerchantAccess   │
+          └──────────────────┴───────────────┴────────────────┘
                              ▼
                      ┌────────────────┐
                      │     Prisma     │
@@ -775,13 +933,15 @@ For backend code changes, `tsx watch` automatically restarts the development ser
                       └──────────────┘
 ```
 
-## 23. Related Files
+## 24. Related Files
 
 - [`backend/src/index.ts`](./src/index.ts) — Express application and route registration
 - [`backend/src/route/auth.ts`](./src/route/auth.ts) — Authentication and OTP verification
 - [`backend/src/route/merchant.ts`](./src/route/merchant.ts) — Merchant creation
+- [`backend/src/route/catalog.ts`](./src/route/catalog.ts) — Product/service search, create, update, delete
 - [`backend/src/route/reset.ts`](./src/route/reset.ts) — Password reset
 - [`backend/src/middleware/auth.ts`](./src/middleware/auth.ts) — JWT authentication middleware
+- [`backend/src/middleware/merchantAccess.ts`](./src/middleware/merchantAccess.ts) — Verifies OWNER/STAFF membership for catalog mutations
 - [`backend/src/memory/otp.ts`](./src/memory/otp.ts) — OTP storage/verification
 - [`backend/src/lib/db.ts`](./src/lib/db.ts) — Prisma client
 - [`backend/src/lib/mailer.ts`](./src/lib/mailer.ts) — Nodemailer helpers
