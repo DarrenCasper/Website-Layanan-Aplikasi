@@ -3,6 +3,7 @@ import { requireAuth } from "../middleware/auth.ts"
 import { Prisma } from "../generated/prisma/client.ts"
 import { prisma } from "../lib/db.ts"
 import { requireMerchantAccess } from "../middleware/merchantAccess.ts"
+import { catalogSearchLimiter, catalogMutationLimiter } from "../middleware/rateLimiter.ts"
 
 const catalogRouter = Router()
 
@@ -246,7 +247,7 @@ function handleMutationError(
 
   return handleError(error, res)
 }
-catalogRouter.get("/products", async (req: Request, res: Response) => {
+catalogRouter.get("/products", catalogSearchLimiter, async (req: Request, res: Response) => {
   try {
     const { q, tags, merchantId, page, limit } = readSearchQuery(req.query)
 
@@ -314,7 +315,7 @@ catalogRouter.get("/products", async (req: Request, res: Response) => {
   }
 })
 
-catalogRouter.get("/services", async (req: Request, res: Response) => {
+catalogRouter.get("/services", catalogSearchLimiter, async (req: Request, res: Response) => {
   try {
     const { q, tags, merchantId, page, limit } = readSearchQuery(req.query)
 
@@ -385,7 +386,7 @@ catalogRouter.get("/services", async (req: Request, res: Response) => {
 
 // Routes for creating products or services that are protected by auth
 
-catalogRouter.post("/merchants/:merchantId/products", requireAuth, requireMerchantAccess, async (req: Request, res: Response) => {
+catalogRouter.post("/merchants/:merchantId/products", requireAuth, catalogMutationLimiter, requireMerchantAccess, async (req: Request, res: Response) => {
   try {
     const merchantId = req.params.merchantId
 
@@ -418,7 +419,7 @@ catalogRouter.post("/merchants/:merchantId/products", requireAuth, requireMercha
   }
 })
 
-catalogRouter.post("/merchants/:merchantId/services", requireAuth, requireMerchantAccess, async (req: Request, res: Response) => {
+catalogRouter.post("/merchants/:merchantId/services", requireAuth, catalogMutationLimiter, requireMerchantAccess, async (req: Request, res: Response) => {
   try {
     const merchantId = req.params.merchantId
 
@@ -453,7 +454,7 @@ catalogRouter.post("/merchants/:merchantId/services", requireAuth, requireMercha
 
 // next is the update routes for products and services, which are also protected by auth
 
-catalogRouter.patch("/merchants/:merchantId/products/:productId", requireAuth, requireMerchantAccess, async (req: Request, res: Response) => {
+catalogRouter.patch("/merchants/:merchantId/products/:productId", requireAuth, catalogMutationLimiter, requireMerchantAccess, async (req: Request, res: Response) => {
   try{
     const {merchantId, productId} = req.params
 
@@ -482,7 +483,7 @@ catalogRouter.patch("/merchants/:merchantId/products/:productId", requireAuth, r
   }
 })
 
-catalogRouter.patch("/merchants/:merchantId/services/:serviceId", requireAuth, requireMerchantAccess, async (req: Request, res: Response) => {
+catalogRouter.patch("/merchants/:merchantId/services/:serviceId", requireAuth, catalogMutationLimiter, requireMerchantAccess, async (req: Request, res: Response) => {
   try{
     const {merchantId, serviceId} = req.params
 
@@ -513,7 +514,7 @@ catalogRouter.patch("/merchants/:merchantId/services/:serviceId", requireAuth, r
 
 // last one is the delete routes for products and services, which are also protected by auth
 
-catalogRouter.delete("/merchants/:merchantId/products/:productId", requireAuth, requireMerchantAccess, async (req: Request, res: Response) => {
+catalogRouter.delete("/merchants/:merchantId/products/:productId", requireAuth, catalogMutationLimiter, requireMerchantAccess, async (req: Request, res: Response) => {
   try{
     const {merchantId, productId} = req.params
     
@@ -537,7 +538,7 @@ catalogRouter.delete("/merchants/:merchantId/products/:productId", requireAuth, 
   }
 })
 
-catalogRouter.delete("/merchants/:merchantId/services/:serviceId", requireAuth, requireMerchantAccess, async (req: Request, res: Response) => {
+catalogRouter.delete("/merchants/:merchantId/services/:serviceId", requireAuth, catalogMutationLimiter, requireMerchantAccess, async (req: Request, res: Response) => {
   try{
     const {merchantId, serviceId} = req.params
     
