@@ -6,6 +6,8 @@
 // the brand, the search field and the account link.
 
 .navbar {
+  // Height is mirrored by $catalog-navbar-height; the Explore filter column
+  // pins itself below this bar.
   position: sticky;
   top: 0;
   z-index: 20;

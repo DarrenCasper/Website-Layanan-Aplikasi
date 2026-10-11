@@ -64,3 +64,10 @@ $catalog-field-placeholder: #71717a;
 $catalog-radius-card: 10px;
 $catalog-radius-bar: 20px;
 $catalog-radius-control: 16px;
+
+// Height of the sticky NavBar (`.navbar`) on the catalog screens. The Explore
+// page pins its filter column directly below the bar, so the measured height
+// lives here instead of being guessed in two places. It comes from the 48px
+// brand mark plus the 20px bar padding plus the 20px navbar wrapper padding,
+// with the 40px wordmark's line box adding the final pixel.
+$catalog-navbar-height: 129px;

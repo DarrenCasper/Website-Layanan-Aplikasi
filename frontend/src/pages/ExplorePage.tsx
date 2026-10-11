@@ -12,9 +12,10 @@ import {
 import './ExplorePage.scss'
 
 // Explore Page (Figma 25:2). The signed-in landing screen: a sticky bar, the
-// empty filter panel the design reserves on the left, and the product grids on
-// the right. Cards come from the API when it has listings and from the curated
-// mock catalog otherwise, so the page always matches the design.
+// empty filter panel the design reserves on the left, and the two product
+// sections stacked in one column to its right. Cards come from the API when it
+// has listings and from the curated mock catalog otherwise, so the page always
+// matches the design.
 function ExplorePage() {
   const navigate = useNavigate()
 
@@ -91,31 +92,33 @@ function ExplorePage() {
         </div>
 
         <div className="explore__items">
-          <p className="explore__heading">{departmentHeading}</p>
+          <div className="explore__section">
+            <p className="explore__heading">{departmentHeading}</p>
 
-          {isLoading || departmentProducts.length > 0 ? (
-            <div className="explore__grid">
-              {departmentProducts.map((product) => (
-                <ProductCard key={product.id} product={product} onClick={openProduct} />
-              ))}
+            {isLoading || departmentProducts.length > 0 ? (
+              <div className="explore__grid">
+                {departmentProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} onClick={openProduct} />
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {hasFteicSection ? (
+            <div className="explore__section">
+              <p className="explore__heading">{FTEIC_SECTION}</p>
+
+              {isLoading || fteicProducts.length > 0 ? (
+                <div className="explore__grid">
+                  {fteicProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} onClick={openProduct} />
+                  ))}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
       </div>
-
-      {hasFteicSection ? (
-        <div className="explore__section">
-          <p className="explore__heading">{FTEIC_SECTION}</p>
-
-          {isLoading || fteicProducts.length > 0 ? (
-            <div className="explore__grid">
-              {fteicProducts.map((product) => (
-                <ProductCard key={product.id} product={product} onClick={openProduct} />
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
 
       {showNotice ? (
         <p className="explore__notice">

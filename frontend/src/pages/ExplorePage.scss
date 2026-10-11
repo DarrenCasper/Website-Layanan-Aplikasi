@@ -1,9 +1,9 @@
 @use '../styles/variables' as v;
 
 // Explore Page (Figma 25:2). 1920x1080 frame: the dark wave backdrop shared
-// with the auth screens, the sticky bar, a 490px filter column the design
-// reserves on the left, and two product sections on the right. The second
-// section sits outside the content row so it can span the full frame width.
+// with the auth screens, the sticky bar, a 490px filter column pinned below that
+// bar and sized to the viewport, and the two product sections stacked in one
+// column to its right, so both sections share the same left edge and width.
 
 .explore {
   display: flex;
@@ -28,27 +28,35 @@
   padding: 0 20px;
 }
 
+// Pinned so the filters stay reachable while the grids scroll. The height is
+// measured from the viewport rather than fixed, which keeps the panel's bottom
+// edge on screen instead of letting it run past the fold where a pinned panel
+// could never be scrolled to.
 .explore__filter {
+  position: sticky;
+  top: calc(#{v.$catalog-navbar-height} + 20px);
   display: flex;
   flex: none;
   flex-direction: column;
   width: 490px;
-  height: 950px;
-  padding: 44px 0;
+  height: calc(100svh - #{v.$catalog-navbar-height} - 40px);
+  padding: 44px 0 0;
 }
 
 .explore__filter-panel {
   flex: 1 1 0;
+  min-height: 0;
   padding: 10px;
   border-radius: v.$catalog-radius-bar;
   background: v.$catalog-panel-bg;
+  overflow-y: auto;
 }
 
 .explore__items {
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
-  gap: 20px;
+  gap: 50px;
   min-width: 0;
   overflow: hidden;
 }
@@ -56,10 +64,8 @@
 .explore__section {
   display: flex;
   flex-direction: column;
-  gap: 40px;
-  width: 100%;
-  padding: 30px 160px;
-  overflow: hidden;
+  gap: 20px;
+  min-width: 0;
 }
 
 .explore__heading {
@@ -72,11 +78,10 @@
 }
 
 .explore__grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
   gap: 10px;
-  align-items: flex-start;
-  overflow: hidden;
+  align-items: start;
 }
 
 .explore__notice {

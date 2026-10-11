@@ -1,16 +1,16 @@
 @use '../styles/variables' as v;
 
 // Explore grid tile, taken from the ItemFrame component (26:56) that the
-// Explore Page (25:2) repeats. Fixed 220px width, white surface, and a 73px
-// text block pinned to the bottom so every card lines up regardless of how
+// Explore Page (25:2) repeats. The width comes from the Explore grid track, so
+// every row stretches to fill its column. The card paints a white surface and
+// pins a 73px text block to the bottom so every card lines up regardless of how
 // long the product name runs.
 
 .product-card {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  flex: none;
-  width: 220px;
+  width: 100%;
   padding: 16px 12px;
   border: 0;
   border-radius: v.$catalog-radius-card;
