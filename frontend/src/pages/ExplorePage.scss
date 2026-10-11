@@ -1,0 +1,88 @@
+@use '../styles/variables' as v;
+
+// Explore Page (Figma 25:2). 1920x1080 frame: the dark wave backdrop shared
+// with the auth screens, the sticky bar, a 490px filter column the design
+// reserves on the left, and two product sections on the right. The second
+// section sits outside the content row so it can span the full frame width.
+
+.explore {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  min-height: 100svh;
+  background-color: v.$auth-bg;
+  background-image: url('../assets/auth-pattern.png');
+  background-repeat: repeat;
+  background-position: top left;
+  background-size: 200px 40px;
+  color: v.$auth-text;
+  font-family: v.$font-auth;
+}
+
+.explore__content {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  width: 100%;
+  padding: 0 20px;
+}
+
+.explore__filter {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 490px;
+  height: 950px;
+  padding: 44px 0;
+}
+
+.explore__filter-panel {
+  flex: 1 1 0;
+  padding: 10px;
+  border-radius: v.$catalog-radius-bar;
+  background: v.$catalog-panel-bg;
+}
+
+.explore__items {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.explore__section {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  width: 100%;
+  padding: 30px 160px;
+  overflow: hidden;
+}
+
+.explore__heading {
+  margin: 0;
+  color: v.$catalog-surface;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.explore__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+.explore__notice {
+  margin: 0;
+  padding: 0 20px 20px;
+  color: v.$catalog-on-dark-muted;
+  font-size: 16px;
+  line-height: normal;
+}

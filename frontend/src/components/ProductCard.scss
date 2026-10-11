@@ -1,0 +1,79 @@
+@use '../styles/variables' as v;
+
+// Explore grid tile, taken from the ItemFrame component (26:56) that the
+// Explore Page (25:2) repeats. Fixed 220px width, white surface, and a 73px
+// text block pinned to the bottom so every card lines up regardless of how
+// long the product name runs.
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: none;
+  width: 220px;
+  padding: 16px 12px;
+  border: 0;
+  border-radius: v.$catalog-radius-card;
+  background: v.$catalog-surface;
+  color: v.$catalog-text;
+  font-family: inherit;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.product-card__image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.product-card__texts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: flex-end;
+  height: 73px;
+  overflow: hidden;
+}
+
+.product-card__name {
+  display: block;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-card__price {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.product-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.product-card__stats {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: normal;
+  color: v.$catalog-text-muted;
+  white-space: nowrap;
+}
+
+.product-card__cart {
+  flex: none;
+  width: 15px;
+  height: 15px;
+}

@@ -1,6 +1,8 @@
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import RegisterFormProvider from './context/RegisterFormProvider'
-import HomePage from './pages/HomePage'
+import RequireAuth from './components/RequireAuth'
+import ExplorePage from './pages/ExplorePage'
+import ProductDetailPage from './pages/ProductDetailPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import RegisterStageTwoPage from './pages/RegisterStageTwoPage'
@@ -11,7 +13,24 @@ import ResetFormProvider from './context/ResetFormProvider'
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      {/* Catalog screens. Login and register both redirect here on success. */}
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <ExplorePage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/product/:id"
+        element={
+          <RequireAuth>
+            <ProductDetailPage />
+          </RequireAuth>
+        }
+      />
+
       <Route path="/login" element={<LoginPage />} />
 
       <Route

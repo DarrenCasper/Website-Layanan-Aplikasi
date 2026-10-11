@@ -45,3 +45,22 @@ $auth-radius-mark: 20px;
 $breakpoint-art-hide: 1200px;
 $breakpoint-mobile: 640px;
 $font-auth: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+// Catalog tokens, taken from the Figma Explore Page (25:2) and
+// ProductDescription (43:107) frames. Those frames sit on the same dark wave
+// backdrop as the auth screens, so the surface colours there are reused for the
+// cards and panels layered on top of it.
+$catalog-surface: #ffffff;
+$catalog-text: #151515;
+$catalog-text-soft: #09090b;
+$catalog-text-muted: rgba(21, 21, 21, 0.5);
+$catalog-on-dark-muted: rgba(255, 255, 255, 0.5);
+$catalog-hairline: rgba(0, 0, 0, 0.1);
+$catalog-nav-bg: rgba(255, 255, 255, 0.05);
+$catalog-panel-bg: rgba(255, 255, 255, 0.2);
+$catalog-placeholder-bg: #d9d9d9;
+$catalog-field-border: #e4e4e7;
+$catalog-field-placeholder: #71717a;
+$catalog-radius-card: 10px;
+$catalog-radius-bar: 20px;
+$catalog-radius-control: 16px;

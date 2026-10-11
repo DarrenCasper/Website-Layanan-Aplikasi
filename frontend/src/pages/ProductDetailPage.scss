@@ -1,0 +1,472 @@
+@use '../styles/variables' as v;
+
+// Product Description (Figma 43:107). Two white cards on the dark wave
+// backdrop: an 1100px item card holding the gallery, pricing, variant pills and
+// description, and a 500px buy panel holding the quantity stepper and the add
+// to cart button. 140px side padding and a 40px gutter add up to the frame's
+// 1640px content width.
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 80px;
+  width: 100%;
+  min-height: 100svh;
+  background-color: v.$auth-bg;
+  background-image: url('../assets/auth-pattern.png');
+  background-repeat: repeat;
+  background-position: top left;
+  background-size: 200px 40px;
+  color: v.$auth-text;
+  font-family: v.$font-auth;
+}
+
+.detail__body {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  width: 100%;
+  padding: 0 140px 140px;
+  overflow: hidden;
+}
+
+// --- item card -------------------------------------------------------------
+
+.detail__card {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 40px;
+  width: 1100px;
+  padding: 40px;
+  border-radius: v.$catalog-radius-bar;
+  background: v.$catalog-surface;
+  color: v.$catalog-text;
+  overflow: hidden;
+}
+
+.detail__core {
+  display: flex;
+  gap: 40px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid v.$catalog-hairline;
+}
+
+.detail__gallery {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 20px;
+  width: 416px;
+}
+
+.detail__hero {
+  display: block;
+  width: 416px;
+  height: 416px;
+  border-radius: v.$catalog-radius-bar;
+  object-fit: cover;
+}
+
+.detail__thumbs {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.detail__thumb {
+  flex: none;
+  width: 80px;
+  height: 80px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.detail__thumb--selected {
+  border-color: v.$catalog-text;
+}
+
+.detail__thumb-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail__summary {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: flex-end;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.detail__title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.detail__price-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid v.$catalog-hairline;
+}
+
+.detail__price {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.detail__stats {
+  margin: 0;
+  color: v.$catalog-text-muted;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.detail__variants {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail__variants-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.detail__variant-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.detail__variant {
+  height: 48px;
+  padding: 0 20px;
+  border: 1px solid v.$catalog-hairline;
+  border-radius: v.$catalog-radius-control;
+  background: transparent;
+  color: #000000;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.detail__variant--selected {
+  border-color: v.$catalog-text;
+  background: v.$catalog-text;
+  color: v.$catalog-surface;
+}
+
+.detail__schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid v.$catalog-hairline;
+}
+
+.detail__schedule-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.detail__date-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 240px;
+  height: 40px;
+  padding: 10px 17px 10px 13px;
+  border: 1px solid v.$catalog-field-border;
+  border-radius: 6px;
+  background: v.$catalog-surface;
+}
+
+.detail__date-input {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: v.$catalog-text;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  outline: none;
+
+  // While empty the native control is hidden and the design's own placeholder
+  // takes its place, so the field reads "Pick a date" rather than a date mask.
+  &--empty {
+    color: transparent;
+  }
+
+  // Stretching the picker indicator over the whole control means a click
+  // anywhere in the field opens the calendar.
+  &::-webkit-calendar-picker-indicator {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.detail__date-placeholder {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: v.$catalog-field-placeholder;
+  font-size: 14px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.detail__date-icon {
+  flex: none;
+  color: v.$catalog-field-placeholder;
+  opacity: 0.5;
+}
+
+.detail__description {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail__description-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail__description-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.detail__description-subtitle {
+  margin: 0;
+  color: v.$catalog-text-muted;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.detail__description-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: normal;
+
+  p {
+    margin: 0;
+  }
+}
+
+.detail__merchant {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.detail__merchant-avatar {
+  flex: none;
+  width: 100px;
+  height: 100px;
+  border-radius: 100px;
+  background: v.$catalog-placeholder-bg;
+}
+
+.detail__merchant-text {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.detail__merchant-name {
+  margin: 0;
+  overflow: hidden;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail__merchant-city {
+  margin: 0;
+  color: v.$catalog-text-muted;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+// --- buy panel -------------------------------------------------------------
+
+.detail__buy {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 40px;
+  width: 500px;
+  padding: 40px;
+  border-radius: v.$catalog-radius-bar;
+  background: v.$catalog-surface;
+  color: v.$catalog-text;
+  overflow: hidden;
+}
+
+.detail__buy-core {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: flex-end;
+  padding-bottom: 40px;
+  border-bottom: 1px solid v.$catalog-hairline;
+}
+
+.detail__buy-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.detail__buy-summary {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  overflow: hidden;
+}
+
+.detail__buy-thumb {
+  flex: none;
+  width: 100px;
+  height: 100px;
+  border-radius: v.$catalog-radius-card;
+  background: v.$catalog-placeholder-bg;
+}
+
+.detail__buy-subtitle {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  color: v.$catalog-text-soft;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.detail__quantity-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.detail__quantity {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  height: 68px;
+  border: 1px solid v.$catalog-hairline;
+  border-radius: v.$catalog-radius-control;
+}
+
+.detail__quantity-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 20px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  img {
+    display: block;
+    width: 24px;
+    height: 24px;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
+.detail__quantity-value {
+  color: #000000;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.detail__stock {
+  margin: 0;
+  color: v.$catalog-text-soft;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.detail__cart-button {
+  width: 420px;
+  padding: 20px;
+  border: 0;
+  border-radius: v.$catalog-radius-control;
+  background: v.$catalog-text;
+  color: v.$catalog-surface;
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
