@@ -16,6 +16,11 @@
 # deadline plus a process-liveness check, and every failure prints the actual
 # cause before exiting non-zero. A silent wait here is a bug in this script.
 #
+# Self healing contract: something that is merely not up yet is brought up, not
+# reported. A stopped database is started, missing dependencies are installed,
+# and a missing Prisma client is generated. Failure means "this could not be
+# started", never "this was not started yet".
+#
 # Stopping is driven by which process holds the port, not by saved PIDs.
 # A saved PID is unreliable here: "cd dir && cmd &" backgrounds a wrapper
 # subshell, so $! is the wrapper, not the server. Killing the wrapper leaves the
@@ -35,6 +40,17 @@ FRONTEND_PORT=5173
 BACKEND_LOG="$LOGS/backend.log"
 FRONTEND_LOG="$LOGS/frontend.log"
 PRISMA_LOG="$LOGS/prisma-generate.log"
+INSTALL_LOG="$LOGS/install.log"
+DB_LOG="$LOGS/database.log"
+PIDFILE="$LOGS/dev.sh.pid"
+
+# PIDs of the wrappers this run launched, empty until the start section.
+BACKEND_PID=''
+FRONTEND_PID=''
+
+# How long to wait for a database container that dev.sh started itself. MySQL
+# initialises its system tables on a first run, which is not instant.
+DB_START_TIMEOUT=90
 
 # Lines that mean "this server is never going to come up". They let a wait give
 # up in about a second and quote the real cause instead of burning the timeout.
@@ -74,6 +90,51 @@ clear_progress() {
     printf '\r\033[K'
   fi
   return 0
+}
+
+# One heartbeat for a slow step: a self-overwriting line on a terminal, a line
+# every ten seconds when the output is a pipe or a file.
+tick() {
+  local label="$1" elapsed="$2"
+  if [ "$IS_TTY" = 1 ]; then
+    progress "$label: ${elapsed}s"
+  elif [ "$elapsed" -gt 0 ] && [ $((elapsed % 10)) -eq 0 ]; then
+    info "$label: still working (${elapsed}s)"
+  fi
+  return 0
+}
+
+# Runs a slow command (an install, a generate, a container start) with its
+# output in a log while printing elapsed time, so a two minute install reads as
+# work in progress instead of a frozen terminal. Returns the command's status.
+run_quiet() {
+  local label="$1" logfile="$2"
+  shift 2
+  local started ticker='' rc=0
+  started="$(date +%s)"
+
+  # The heartbeat is a separate subshell, so it must not inherit errexit or the
+  # traps: being killed at the end of the command is not a script failure.
+  (
+    set +e
+    trap - ERR INT TERM HUP
+    while :; do
+      sleep 1
+      tick "$label" "$(( $(date +%s) - started ))"
+    done
+  ) &
+  ticker=$!
+
+  if "$@" </dev/null >"$logfile" 2>&1; then
+    rc=0
+  else
+    rc=$?
+  fi
+
+  kill "$ticker" 2>/dev/null || true
+  wait "$ticker" 2>/dev/null || true
+  clear_progress
+  return "$rc"
 }
 
 # ---------------------------------------------------------------------------
@@ -130,6 +191,7 @@ abort() {
 # Report, dump what the servers logged, clean up, and exit non-zero.
 die() {
   clear_progress
+  release_pidfile
   fail "$*"
   explain_log "$BACKEND_LOG"
   explain_log "$FRONTEND_LOG"
@@ -155,6 +217,7 @@ on_error() {
 # Defined before the signal traps are installed so an early Ctrl+C still works.
 cleanup() {
   trap - INT TERM HUP ERR
+  release_pidfile
   echo
   info "shutting down"
   if stop_all; then
@@ -289,6 +352,78 @@ stop_all() {
   return $rc
 }
 
+# Kills only the process trees this run launched. A crash in one run must never
+# take down servers that a newer run has since started on the same ports.
+stop_own() {
+  local pid
+  for pid in "$BACKEND_PID" "$FRONTEND_PID"; do
+    if [ -n "$pid" ]; then
+      kill_tree "$pid"
+    fi
+  done
+  return 0
+}
+
+# ---------------------------------------------------------------------------
+# single instance
+# ---------------------------------------------------------------------------
+
+# True when the pid looks like a live ./dev.sh of this project. The cmdline check
+# guards against a recycled pid that now belongs to something else entirely.
+is_dev_sh() {
+  local pid="$1" cmd
+  if [ -z "$pid" ]; then
+    return 1
+  fi
+  if ! kill -0 "$pid" 2>/dev/null; then
+    return 1
+  fi
+  cmd="$(tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null || true)"
+  case "$cmd" in
+    *dev.sh*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# A second ./dev.sh replaces the first instead of racing it: the old run is
+# asked to stop, its own cleanup frees the ports, and only then does this one
+# start. Without this the two runs fight over the same ports and each one's
+# supervisor reports the other's servers as a crash.
+take_over_from_previous_run() {
+  local pid waited=0
+  if [ ! -f "$PIDFILE" ]; then
+    return 0
+  fi
+  pid="$(cat "$PIDFILE" 2>/dev/null || true)"
+  if [ "$pid" = "$$" ] || ! is_dev_sh "$pid"; then
+    rm -f "$PIDFILE"
+    return 0
+  fi
+
+  warn "another ./dev.sh is running (pid $pid), asking it to stop"
+  kill -TERM "$pid" 2>/dev/null || true
+  while [ "$waited" -lt 40 ] && kill -0 "$pid" 2>/dev/null; do
+    sleep 0.25
+    waited=$((waited + 1))
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    warn "it did not stop on SIGTERM, killing it"
+    kill -KILL "$pid" 2>/dev/null || true
+  fi
+  rm -f "$PIDFILE"
+  ok "the previous run is gone"
+}
+
+# Removes the pidfile, but only when it is this run's.
+release_pidfile() {
+  local pid
+  pid="$(cat "$PIDFILE" 2>/dev/null || true)"
+  if [ "$pid" = "$$" ]; then
+    rm -f "$PIDFILE"
+  fi
+  return 0
+}
+
 # ---------------------------------------------------------------------------
 # readiness probes
 # ---------------------------------------------------------------------------
@@ -389,6 +524,58 @@ tcp_reachable() {
   timeout 3 bash -c "exec 3<>/dev/tcp/${1}/${2}" 2>/dev/null
 }
 
+# Runs a command in another directory.
+in_dir() {
+  local dir="$1"
+  shift
+  ( cd "$dir" && exec "$@" )
+}
+
+# MySQL opens port 3306 while it is still initialising, and a backend that
+# queries it too early dies on boot, so readiness means "it answers", not "the
+# port is open". mysqladmin ping reports the server as alive even when it
+# refuses the connection, which is exactly the question being asked here.
+db_ready() {
+  in_dir "$BACKEND" docker compose exec -T mysql_db mysqladmin ping --silent </dev/null >/dev/null 2>&1
+}
+
+# Brings up the project's database container and waits until it really answers.
+# A stopped database is not a failure, it is something to start.
+start_database() {
+  local host="$1" port="$2" started elapsed
+
+  if ! command -v docker >/dev/null 2>&1; then
+    fail "database at $host:$port is down and docker is not installed to start it"
+    note "start MySQL yourself, then run ./dev.sh again"
+    return 1
+  fi
+
+  if ! run_quiet "starting the database container" "$DB_LOG" in_dir "$BACKEND" docker compose up -d mysql_db; then
+    fail "docker compose up -d mysql_db failed"
+    explain_log "$DB_LOG"
+    return 1
+  fi
+
+  started="$(date +%s)"
+  while :; do
+    # The host port only opens once the entrypoint's temporary initialisation
+    # server is done, so this waits for a real server, not a booting one.
+    if tcp_reachable "$host" "$port" && db_ready; then
+      clear_progress
+      return 0
+    fi
+    elapsed=$(( $(date +%s) - started ))
+    if [ "$elapsed" -ge "$DB_START_TIMEOUT" ]; then
+      clear_progress
+      fail "the database did not become ready within ${DB_START_TIMEOUT}s"
+      explain_log "$DB_LOG"
+      return 1
+    fi
+    tick "database starting" "$elapsed"
+    sleep 1
+  done
+}
+
 require_cmds() {
   local missing='' c
   for c in "$@"; do
@@ -412,6 +599,10 @@ require_cmds ss pgrep ps awk sed grep tr cut sort date sleep mkdir timeout
 case "${1:-}" in
   --stop|stop)
     info "stopping dev servers"
+    # Ask a supervising ./dev.sh to stop first, so it cleans up its own servers
+    # instead of reporting them as a crash when the ports disappear.
+    take_over_from_previous_run
+    rm -f "$PIDFILE"
     if stop_all; then
       ok "stopped, ports $BACKEND_PORT and $FRONTEND_PORT are free"
       exit 0
@@ -455,18 +646,31 @@ if [ ! -f "$BACKEND/.env" ]; then
   exit 1
 fi
 
+mkdir -p "$LOGS"
+
+# Claim the project for this run. A previous run is asked to stop and free the
+# ports before this one touches them.
+take_over_from_previous_run
+echo $$ >"$PIDFILE"
+
 if [ ! -d "$BACKEND/node_modules" ]; then
-  fail "backend dependencies are not installed"
-  note "run: cd $BACKEND && npm ci"
-  exit 1
+  info "backend dependencies are missing, installing them"
+  if ! run_quiet "npm install (backend)" "$INSTALL_LOG" in_dir "$BACKEND" npm install; then
+    fail "npm install failed in $BACKEND"
+    explain_log "$INSTALL_LOG"
+    exit 1
+  fi
+  ok "backend dependencies installed"
 fi
 if [ ! -d "$FRONTEND/node_modules" ]; then
-  fail "frontend dependencies are not installed"
-  note "run: cd $FRONTEND && pnpm install"
-  exit 1
+  info "frontend dependencies are missing, installing them"
+  if ! run_quiet "pnpm install (frontend)" "$INSTALL_LOG" in_dir "$FRONTEND" pnpm install; then
+    fail "pnpm install failed in $FRONTEND"
+    explain_log "$INSTALL_LOG"
+    exit 1
+  fi
+  ok "frontend dependencies installed"
 fi
-
-mkdir -p "$LOGS"
 
 # Anything already on these ports would make this run look like it started while
 # the browser still talks to the old process, so clear it out first.
@@ -480,7 +684,7 @@ fi
 # backend route imports it and the server dies on boot without it.
 if [ ! -f "$BACKEND/src/generated/prisma/client.ts" ]; then
   info "generating the Prisma client (first run)"
-  if ! ( cd "$BACKEND" && CI=1 timeout 300 npx --yes prisma generate </dev/null >"$PRISMA_LOG" 2>&1 ); then
+  if ! run_quiet "prisma generate" "$PRISMA_LOG" in_dir "$BACKEND" env CI=1 timeout 300 npx --yes prisma generate; then
     fail "npx prisma generate failed"
     explain_log "$PRISMA_LOG"
     exit 1
@@ -489,7 +693,9 @@ fi
 ok "prisma client present"
 
 # /health queries MySQL, so a database that is not up turns into a 500 and a
-# server that never becomes "ready". Check it here, before anything starts.
+# server that never becomes "ready". A database that is merely stopped is not a
+# failure, it is something to start, so this starts it and only gives up when
+# starting it does not work.
 DB_URL="$(sed -n 's/^[[:space:]]*DATABASE_URL[[:space:]]*=[[:space:]]*//p' "$BACKEND/.env" | awk 'NR==1 { print $1 }' | tr -d "\"'" || true)"
 if [ -z "$DB_URL" ]; then
   warn "DATABASE_URL is not set in backend/.env, skipping the database check"
@@ -505,13 +711,19 @@ else
 
   if [ -z "$DB_HOST" ] || [ "${DB_HOST#\[}" != "$DB_HOST" ]; then
     warn "could not parse a host out of DATABASE_URL, skipping the database check"
-  elif ! tcp_reachable "$DB_HOST" "$DB_PORT"; then
+  elif tcp_reachable "$DB_HOST" "$DB_PORT"; then
+    ok "database reachable at $DB_HOST:$DB_PORT"
+  elif [ "$DB_HOST" != "localhost" ] && [ "$DB_HOST" != "127.0.0.1" ]; then
+    # Not the compose database, so starting a local container would not help.
     fail "database at $DB_HOST:$DB_PORT is not accepting connections"
-    note "the backend serves /health from MySQL, so it cannot come up without it"
-    note "start it with: cd $BACKEND && docker compose up -d mysql_db"
+    note "that is not the local compose database, so dev.sh will not start it for you"
     exit 1
   else
-    ok "database reachable at $DB_HOST:$DB_PORT"
+    info "database at $DB_HOST:$DB_PORT is down, starting it"
+    if ! start_database "$DB_HOST" "$DB_PORT"; then
+      exit 1
+    fi
+    ok "database up at $DB_HOST:$DB_PORT"
   fi
 fi
 
@@ -568,6 +780,30 @@ EOF
 # supervise
 # ---------------------------------------------------------------------------
 
+# Called when a port stops being served. Only the trees this run launched are
+# ever stopped, so a crash here cannot take down another run's servers.
+handle_stopped() {
+  local name="$1" port="$2" pid="$3" logfile="$4"
+
+  # A live wrapper whose port blipped is a moment of churn, not a crash.
+  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+    return 0
+  fi
+
+  # Our server is gone but the port is served again, so something newer owns it.
+  if port_busy "$port"; then
+    warn "the $name this run started is gone, but port $port is served again"
+    info "another ./dev.sh has taken over, this run is exiting"
+    stop_own
+    exit 0
+  fi
+
+  fail "the $name stopped (port $port is no longer served)"
+  explain_log "$logfile"
+  stop_own
+  exit 1
+}
+
 # Watch the ports rather than saved PIDs: if either server dies, its port stops
 # being served and this notices. The log excerpt says why it died.
 supervise() {
@@ -575,16 +811,10 @@ supervise() {
   while :; do
     sleep 1
     if ! port_busy "$BACKEND_PORT"; then
-      fail "the backend stopped (port $BACKEND_PORT is no longer served)"
-      explain_log "$BACKEND_LOG"
-      stop_all >/dev/null 2>&1 || true
-      exit 1
+      handle_stopped "backend" "$BACKEND_PORT" "$BACKEND_PID" "$BACKEND_LOG"
     fi
     if ! port_busy "$FRONTEND_PORT"; then
-      fail "the frontend stopped (port $FRONTEND_PORT is no longer served)"
-      explain_log "$FRONTEND_LOG"
-      stop_all >/dev/null 2>&1 || true
-      exit 1
+      handle_stopped "frontend" "$FRONTEND_PORT" "$FRONTEND_PID" "$FRONTEND_LOG"
     fi
   done
 }
