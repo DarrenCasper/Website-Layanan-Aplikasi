@@ -1,0 +1,77 @@
+# CD - Deploy to Coolify
+#
+# Required GitHub Secrets (Settings -> Secrets and variables -> Actions):
+#   - COOLIFY_FRONTEND_WEBHOOK_URL  : Coolify deploy webhook URL for the frontend resource
+#   - COOLIFY_BACKEND_WEBHOOK_URL   : Coolify deploy webhook URL for the backend resource
+#   - COOLIFY_API_TOKEN             : Coolify API token, sent as a Bearer token on every webhook call
+#
+# Each job independently decides whether to deploy:
+#   - On push to main: only runs if files under its own service directory changed.
+#   - On manual run (workflow_dispatch): runs based on the chosen "service" input.
+
+name: CD - Deploy to Coolify
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Which service to deploy"
+        required: true
+        default: "both"
+        type: choice
+        options:
+          - frontend
+          - backend
+          - both
+
+jobs:
+  deploy-frontend:
+    name: Deploy Frontend to Coolify
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'frontend' || github.event.inputs.service == 'both'))
+    steps:
+      - name: Detect frontend changes
+        id: filter
+        if: github.event_name == 'push'
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+
+      - name: Trigger Coolify deploy webhook (frontend)
+        if: github.event_name == 'workflow_dispatch' || steps.filter.outputs.frontend == 'true'
+        run: |
+          curl --fail-with-body --request GET \
+            --header "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+            "${{ secrets.COOLIFY_FRONTEND_WEBHOOK_URL }}"
+
+  deploy-backend:
+    name: Deploy Backend to Coolify
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'backend' || github.event.inputs.service == 'both'))
+    steps:
+      - name: Detect backend changes
+        id: filter
+        if: github.event_name == 'push'
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+
+      - name: Trigger Coolify deploy webhook (backend)
+        if: github.event_name == 'workflow_dispatch' || steps.filter.outputs.backend == 'true'
+        run: |
+          curl --fail-with-body --request GET \
+            --header "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+            "${{ secrets.COOLIFY_BACKEND_WEBHOOK_URL }}"
