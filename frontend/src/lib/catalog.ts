@@ -8,7 +8,7 @@
 // screens faithful to the design even before any merchant has listed an item.
 
 import { request } from './api'
-import { mockProducts, productImages } from './mockCatalog'
+import { GALLERY_FRAME_COUNT, buildGallery, mockProducts, productImages } from './mockCatalog'
 
 // The Explore page groups cards by section, so the two headings the mock
 // catalog uses are re-exported here and the page imports everything catalog
@@ -20,6 +20,17 @@ export type CatalogProduct = {
   name: string
   price: number
   image: string
+  /**
+   * Photos for the detail page's gallery. The first entry is the main image and
+   * matches `image`.
+   *
+   * The backend stores a single picture per product, so these are filled from
+   * the local asset pool the same way `image` already is. The detail frame draws
+   * a six frame thumbnail strip, and repeating one photo six times reads as a
+   * broken gallery rather than a listing, so the strip gets genuinely different
+   * artwork per frame.
+   */
+  gallery: string[]
   rating: number
   sold: number
   stock: number
@@ -80,12 +91,14 @@ type ApiProductList = {
 function toCatalogProduct(product: ApiProduct): CatalogProduct {
   const seed = hashId(product.id)
   const merchantName = product.merchant?.namaToko ?? 'Toko Layap'
+  const image = productImages[seed % productImages.length]
 
   return {
     id: product.id,
     name: product.name,
     price: product.price,
-    image: productImages[seed % productImages.length],
+    image,
+    gallery: buildGallery(product.id, image, GALLERY_FRAME_COUNT),
     // 3.0 - 5.0, one decimal, matching the range the design cards show.
     rating: Number((3 + (seed % 21) / 10).toFixed(1)),
     sold: seed % 120,

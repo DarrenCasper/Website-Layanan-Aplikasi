@@ -1,4 +1,5 @@
 @use '../styles/variables' as v;
+@use '../styles/focus' as f;
 
 // Explore Page (Figma 25:2). 1920x1080 frame: the dark wave backdrop shared
 // with the auth screens, the sticky bar, a 490px filter column pinned below that
@@ -28,30 +29,14 @@
   padding: 0 20px;
 }
 
-// Pinned so the filters stay reachable while the grids scroll. The height is
-// measured from the viewport rather than fixed, which keeps the panel's bottom
-// edge on screen instead of letting it run past the fold where a pinned panel
-// could never be scrolled to.
-.explore__filter {
-  position: sticky;
-  top: calc(#{v.$catalog-navbar-height} + 20px);
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  width: 490px;
-  height: calc(100svh - #{v.$catalog-navbar-height} - 40px);
-  padding: 44px 0 0;
-}
+// Pinned so the filters stay reachable while the grids scroll. The column's own
+// box, the panel inside it and the collapsed toggle all live in
+// FilterPanel.scss, which owns that column now that it carries real controls.
 
-.explore__filter-panel {
-  flex: 1 1 0;
-  min-height: 0;
-  padding: 10px;
-  border-radius: v.$catalog-radius-bar;
-  background: v.$catalog-panel-bg;
-  overflow-y: auto;
-}
-
+// In the desktop row layout this is the flexible column beside the filter, so
+// it takes a zero basis and grows into the remaining width. The `min-width: 0`
+// lets it shrink below its content width, and the clipping keeps a wide grid
+// from spilling into the filter column.
 .explore__items {
   display: flex;
   flex: 1 1 0;
@@ -77,6 +62,29 @@
   white-space: nowrap;
 }
 
+// Screen-reader-only page heading. The design has no visible page title, but the
+// document needs one so the two section headings have something to hang from.
+.explore__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// The heading is a single unbroken phrase, so on a narrow screen it is wider
+// than the viewport and used to give the page a horizontal scrollbar. Allowing
+// it to wrap keeps it inside the content column.
+@media (max-width: v.$breakpoint-catalog-mobile) {
+  .explore__heading {
+    white-space: normal;
+  }
+}
+
 .explore__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
@@ -90,4 +98,95 @@
   color: v.$catalog-on-dark-muted;
   font-size: 16px;
   line-height: normal;
+}
+
+// --- empty state -----------------------------------------------------------
+
+// Shown in place of the grids when the search and the filters together match
+// nothing, so the page explains itself instead of collapsing to blank space.
+.explore__empty {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 40px;
+  border-radius: v.$catalog-radius-bar;
+  background: v.$catalog-panel-bg;
+}
+
+.explore__empty-title {
+  margin: 0;
+  color: v.$catalog-surface;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.explore__empty-text {
+  margin: 0;
+  max-width: 60ch;
+  color: v.$catalog-surface;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.explore__empty-action {
+  margin-top: 8px;
+  padding: 12px 24px;
+  border: 0;
+  border-radius: v.$catalog-radius-control;
+  background: v.$catalog-surface;
+  color: v.$catalog-text;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: normal;
+  cursor: pointer;
+
+  @include f.focus-ring-light;
+}
+
+// --- collapsed layout ------------------------------------------------------
+
+// Once the filter stops being a sidebar the content row becomes a single
+// column, with the filter toggle above the grids. The row's own
+// `align-items: flex-start` is meant for the two-column layout; in a column it
+// would size each child to its content instead of the container, which lets a
+// long single-line product name push the grid wider than the viewport. Stretch
+// keeps every child exactly as wide as the content row.
+@media (max-width: v.$breakpoint-catalog-stack) {
+  .explore__content {
+    flex-direction: column;
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  // In a column, `flex-basis: 0` resolves against the height instead of the
+  // width. The items block would then have a hypothetical height of zero, which
+  // collapses the content row to zero, and `overflow: hidden` would clip every
+  // card inside it. The page rendered blank and could not even be scrolled,
+  // because the document height collapsed with it. Sizing the block by its own
+  // content restores both the cards and the scroll.
+  .explore__items {
+    flex: none;
+    overflow: visible;
+  }
+
+  .explore__empty {
+    padding: 28px;
+  }
+}
+
+@media (max-width: v.$breakpoint-catalog-mobile) {
+  .explore__content {
+    padding: 0 16px;
+  }
+
+  .explore__items {
+    gap: 36px;
+  }
+
+  .explore__empty {
+    padding: 24px;
+  }
 }

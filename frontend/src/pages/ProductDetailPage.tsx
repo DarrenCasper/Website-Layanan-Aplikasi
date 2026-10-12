@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import NavBar from '../components/NavBar'
+import { SkeletonDetail, SkeletonStatus } from '../components/CatalogSkeleton'
 import { formatRupiah, loadCatalogProducts, type CatalogProduct } from '../lib/catalog'
-import { productImages } from '../lib/mockCatalog'
+import { CATALOG_TITLE, productTitle, useDocumentTitle } from '../lib/useDocumentTitle'
 import minusIcon from '../assets/catalog/icon-minus.svg'
 import plusIcon from '../assets/catalog/icon-plus.svg'
 import './ProductDetailPage.scss'
 
-// The design shows a six frame thumbnail strip under the hero. The first frame
-// is the product's own artwork and the rest fall back to the standard render
-// the Figma file uses, which is what keeps the strip looking like the mock.
-const THUMBNAIL_COUNT = 6
-const THUMBNAIL_FALLBACK = productImages[0]
 const CART_CONFIRMATION_MS = 2000
 
 // Product Description (Figma 43:107). The item card carries the gallery, the
@@ -22,6 +18,7 @@ function ProductDetailPage() {
   const navigate = useNavigate()
 
   const [product, setProduct] = useState<CatalogProduct | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [imageIndex, setImageIndex] = useState(0)
@@ -39,6 +36,8 @@ function ProductDetailPage() {
       if (!isActive) {
         return
       }
+
+      setIsLoading(false)
 
       // An unknown id would otherwise render an empty shell, so send the
       // visitor back to the catalog instead.
@@ -70,19 +69,11 @@ function ProductDetailPage() {
     }
   }, [])
 
-  const thumbnails = useMemo(() => {
-    if (!product) {
-      return []
-    }
-
-    const frames = [product.image]
-
-    while (frames.length < THUMBNAIL_COUNT) {
-      frames.push(THUMBNAIL_FALLBACK)
-    }
-
-    return frames
-  }, [product])
+  // The gallery comes straight from the product. Filling a short gallery up to
+  // six frames with one repeated fallback was what made the strip look like a
+  // single photo shown six times, so a product with fewer photos now simply
+  // shows the frames it has.
+  const thumbnails = useMemo(() => product?.gallery ?? [], [product])
 
   const descriptionParagraphs = useMemo(() => {
     if (!product) {
@@ -95,16 +86,37 @@ function ProductDetailPage() {
       .filter((paragraph) => paragraph !== '')
   }, [product])
 
+  // Held on the catalog title until the product resolves, so the tab does not
+  // flash a placeholder name on the way in.
+  useDocumentTitle(product ? productTitle(product.name) : CATALOG_TITLE)
+
   if (!product) {
     return (
       <main className="detail">
         <NavBar />
+
+        {isLoading ? (
+          <>
+            <SkeletonStatus label="Memuat detail barang" />
+            <SkeletonDetail />
+          </>
+        ) : null}
       </main>
     )
   }
 
   const subtitle = selectedVariant ? `Varian ${selectedVariant}` : product.merchantName
   const mainImage = thumbnails[imageIndex] ?? product.image
+
+  // The design draws the merchant avatar as a plain grey circle, which reads as
+  // an image that never loaded. Two initials from the shop name make it look
+  // like an avatar instead, and it is derived from the name so it is stable.
+  const merchantInitials = product.merchantName
+    .split(/\s+/)
+    .filter((word) => word !== '')
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? '')
+    .join('')
 
   // Stock zero still leaves one unit selectable, but the plus button is inert.
   const maxQuantity = product.stock > 0 ? product.stock : 1
@@ -213,7 +225,7 @@ function ProductDetailPage() {
                   />
 
                   {pickupDate === '' ? (
-                    <span className="detail__date-placeholder">Pick a date</span>
+                    <span className="detail__date-placeholder">Pilih tanggal</span>
                   ) : null}
 
                   <svg
@@ -252,7 +264,9 @@ function ProductDetailPage() {
           </div>
 
           <div className="detail__merchant">
-            <span className="detail__merchant-avatar" aria-hidden="true" />
+            <span className="detail__merchant-avatar" aria-hidden="true">
+              {merchantInitials}
+            </span>
 
             <div className="detail__merchant-text">
               <p className="detail__merchant-name">{product.merchantName}</p>
@@ -266,8 +280,12 @@ function ProductDetailPage() {
             <h2 className="detail__buy-title">Mau yang ini berapa?</h2>
 
             <div className="detail__buy-summary">
-              <span className="detail__buy-thumb" aria-hidden="true" />
-              <p className="detail__buy-subtitle">{subtitle}</p>
+              <img className="detail__buy-thumb" src={product.image} alt="" aria-hidden="true" />
+
+              <div className="detail__buy-text">
+                <p className="detail__buy-subtitle">{subtitle}</p>
+                <p className="detail__buy-unit">{formatRupiah(product.price)} / item</p>
+              </div>
             </div>
 
             <div className="detail__quantity-row">
@@ -297,6 +315,11 @@ function ProductDetailPage() {
 
               <p className="detail__stock">Stok: {product.stock}</p>
             </div>
+          </div>
+
+          <div className="detail__buy-total">
+            <p className="detail__buy-total-label">Total ({quantity} item)</p>
+            <p className="detail__buy-total-value">{formatRupiah(product.price * quantity)}</p>
           </div>
 
           <button

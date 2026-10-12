@@ -1,4 +1,5 @@
 @use '../styles/variables' as v;
+@use '../styles/focus' as f;
 
 // Explore grid tile, taken from the ItemFrame component (26:56) that the
 // Explore Page (25:2) repeats. The width comes from the Explore grid track, so
@@ -20,6 +21,8 @@
   text-align: left;
   overflow: hidden;
   cursor: pointer;
+
+  @include f.focus-ring-dark;
 }
 
 .product-card__image {
@@ -72,6 +75,12 @@
   white-space: nowrap;
 }
 
+// The three dot mark on the card. Its stroke colour lives in the asset itself
+// (icon-cart-add.svg), because an SVG cannot read a Sass token. It is #8a8a8a,
+// which is 3.45:1 on the white card and so clears the 3:1 bar that applies to a
+// glyph carrying no information of its own. The original asset drew the same
+// stroke at 25% opacity, which composited to roughly 1.8:1 and was effectively
+// invisible.
 .product-card__cart {
   flex: none;
   width: 15px;

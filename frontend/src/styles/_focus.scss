@@ -1,0 +1,33 @@
+@use '../styles/variables' as v;
+
+// Keyboard focus treatment for the catalog screens.
+//
+// Every interactive control on these pages previously cleared the browser's own
+// focus ring with `outline: none` and put nothing in its place, so a keyboard
+// user could not see where they were. These mixins restore a ring that clears
+// the 3:1 non-text contrast bar against whichever surface the control sits on.
+//
+// Both rings are drawn with `box-shadow` rather than `outline` so the ring can
+// sit outside the control's border radius and follow it, and so it does not
+// change the element's layout when it appears.
+
+/// Focus ring for controls on the dark wave backdrop and on the translucent
+/// panels layered over it.
+@mixin focus-ring-light {
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 3px v.$catalog-focus-ring-light,
+      0 0 0 5px rgba(21, 21, 21, 0.85);
+  }
+}
+
+/// Focus ring for controls on the white cards.
+@mixin focus-ring-dark {
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 3px v.$catalog-focus-ring-dark,
+      0 0 0 5px rgba(255, 255, 255, 0.9);
+  }
+}

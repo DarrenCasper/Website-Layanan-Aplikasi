@@ -57,6 +57,38 @@ export const productImages: string[] = [
 /** High resolution render used as the hero on the Product Description frame. */
 export const productDetailMainImage = productDetailMain
 
+/** Frames the Product Description frame draws in its thumbnail strip. */
+export const GALLERY_FRAME_COUNT = 6
+
+/**
+ * Picks the frames for a product's gallery.
+ *
+ * Starts from the product's own image and then walks the asset pool from a
+ * position derived from the id, skipping anything already chosen so no frame
+ * repeats. It walks with a stride rather than taking consecutive entries so that
+ * neighbouring products do not end up with near-identical galleries.
+ */
+export function buildGallery(id: string, mainImage: string, count: number): string[] {
+  const frames = [mainImage]
+  let position = 0
+
+  // Each character contributes to the starting offset, which is enough to keep
+  // two products with different ids from landing on the same sequence.
+  for (let index = 0; index < id.length; index += 1) {
+    position = (position * 31 + id.charCodeAt(index)) % 1_000_003
+  }
+
+  for (let step = 1; frames.length < count && step <= productImages.length; step += 1) {
+    const candidate = productImages[(position + step * 3) % productImages.length]
+
+    if (!frames.includes(candidate)) {
+      frames.push(candidate)
+    }
+  }
+
+  return frames
+}
+
 export const DEPARTMENT_SECTION = 'Barang dari Departemen Teknik Komputer'
 export const FTEIC_SECTION = 'Barang dari FTEIC'
 
@@ -92,6 +124,12 @@ type CatalogSeed = {
   tags: string[]
   variants?: string[]
   description?: string
+  /**
+   * Extra gallery photos, on top of `image` which is always the first frame.
+   * Omitted seeds get their remaining frames derived from the id, which keeps
+   * the strip from repeating one picture without inventing artwork per item.
+   */
+  gallery?: string[]
 }
 
 // The 20 cards the Explore frame lays out under
@@ -256,87 +294,159 @@ const departmentSeeds: CatalogSeed[] = [
   },
   {
     id: 'mock-15',
-    name: 'Silakan naik bosss',
-    price: 44400000,
+    name: 'Perancah besi bekas proyek, masih kokoh',
+    price: 1850000,
     image: product07,
-    rating: 0.0,
-    sold: 0,
+    rating: 4.2,
+    sold: 5,
     stock: 12,
     merchantName: 'Bengkel Las Mandiri',
     tags: ['tangga', 'perkakas'],
   },
   {
     id: 'mock-16',
-    name: 'Bukan motor gua',
-    price: 160000000,
+    name: 'Motor gede simpanan almarhum bapak',
+    price: 96500000,
     image: product08,
-    rating: 4.9,
-    sold: 1,
+    rating: 4.7,
+    sold: 3,
     stock: 1,
     merchantName: 'Motor Antik Surabaya',
     tags: ['motor', 'klasik'],
   },
   {
     id: 'mock-17',
-    name: 'Alat tambang ilegal obral murah',
-    price: 120000000,
+    name: 'Beko mini siap kerja, surat lengkap',
+    price: 78000000,
     image: product09,
-    rating: 4.4,
-    sold: 18,
-    stock: 6,
+    rating: 4.1,
+    sold: 9,
+    stock: 3,
     merchantName: 'Alat Berat Nusantara',
     tags: ['alat berat', 'tambang'],
   },
   {
     id: 'mock-18',
-    name: 'NVIDIA RTX 3090 8x Array 24GB VRAM',
-    price: 32000000,
+    name: 'Rig GPU 8 slot, PSU 2000W include',
+    price: 42500000,
     image: product10,
-    rating: 4.3,
-    sold: 7,
-    stock: 8,
+    rating: 4.5,
+    sold: 11,
+    stock: 4,
     merchantName: 'PC Jaya Komputer',
     tags: ['gpu', 'nvidia', 'rtx 3090'],
   },
   {
     id: 'mock-19',
-    name: 'Alat dari gacoan 16x bisa buat manggil anjing',
-    price: 8900000,
+    name: 'Pager kantor jadul, masih bunyi semua',
+    price: 2450000,
     image: product11,
-    rating: 4.0,
-    sold: 12,
+    rating: 3.9,
+    sold: 4,
     stock: 20,
     merchantName: 'Toko Serba Ada',
     tags: ['perkakas', 'unik'],
   },
   {
     id: 'mock-20',
-    name: 'Meong kacamata matcha',
-    price: 6540000,
+    name: 'Kucing oyen pakai kacamata, lucu pol',
+    price: 950000,
     image: product12,
-    rating: 4.8,
-    sold: 12,
+    rating: 4.6,
+    sold: 27,
     stock: 7,
     merchantName: 'Pet Corner Surabaya',
     tags: ['kucing', 'kacamata', 'hewan'],
   },
 ]
 
-// The seven cards the Explore frame lays out under "Barang dari FTEIC". Every
-// one of them reuses the same PC build, so the names and figures repeat.
-const fteicImages = [product15, product16, product17, product18, product19, product20, product12]
-
-const fteicSeeds: CatalogSeed[] = fteicImages.map((image, index) => ({
-  id: `fteic-${index + 1}`,
-  name: 'PC Rakitan Gaming | Ryzen 9700',
-  price: 64000000,
-  image,
-  rating: 4.5,
-  sold: 80,
-  stock: 32,
-  merchantName: 'PC Jaya Komputer',
-  tags: ['pc rakitan', 'gaming', 'ryzen'],
-}))
+// The seven cards the Explore frame lays out under "Barang dari FTEIC".
+//
+// The frame fills this row by repeating one PC build seven times, which renders
+// as seven identical cards: same name, same price, same rating, same sold
+// count. Seven duplicates in a row reads as a rendering fault rather than a
+// catalog, so each slot now carries its own artwork, name and figures. The
+// artwork comes from the images the department grid left unused, so no card in
+// either section repeats a photo that is already visible above it.
+const fteicSeeds: CatalogSeed[] = [
+  {
+    id: 'fteic-1',
+    name: 'Cooler Master Sneaker X Advanced Systems',
+    price: 45500000,
+    image: product15,
+    rating: 4.7,
+    sold: 9,
+    stock: 4,
+    merchantName: 'FTEIC Computer Store',
+    tags: ['pc rakitan', 'gaming'],
+  },
+  {
+    id: 'fteic-2',
+    name: 'DJI RS4 Gimbal Stabilizer Komplit',
+    price: 8750000,
+    image: product16,
+    rating: 4.9,
+    sold: 24,
+    stock: 11,
+    merchantName: 'FTEIC Media Lab',
+    tags: ['kamera', 'gimbal'],
+  },
+  {
+    id: 'fteic-3',
+    name: 'Blackmagic Mini Converter Optical Fiber 12G',
+    price: 4300000,
+    image: product17,
+    rating: 4.6,
+    sold: 6,
+    stock: 9,
+    merchantName: 'FTEIC Broadcast',
+    tags: ['broadcast', 'konverter'],
+  },
+  {
+    id: 'fteic-4',
+    name: 'Kingston IronKey Keypad 200C 512GB',
+    price: 2950000,
+    image: product18,
+    rating: 4.8,
+    sold: 15,
+    stock: 18,
+    merchantName: 'FTEIC Secure Storage',
+    tags: ['storage', 'usb'],
+  },
+  {
+    id: 'fteic-5',
+    name: 'Nurilab 2-in-1 Face Wash & Calming Mask',
+    price: 129000,
+    image: product19,
+    rating: 4.5,
+    sold: 63,
+    stock: 40,
+    merchantName: 'FTEIC Lab Store',
+    tags: ['perawatan', 'skincare'],
+  },
+  {
+    id: 'fteic-6',
+    name: 'Aprecio Zero Blue 2 In-Ear Monitor',
+    price: 749000,
+    image: product20,
+    rating: 4.4,
+    sold: 31,
+    stock: 22,
+    merchantName: 'FTEIC Audio',
+    tags: ['audio', 'earphone'],
+  },
+  {
+    id: 'fteic-7',
+    name: 'Rack Server 2U bekas lab, garansi toko',
+    price: 58000000,
+    image: product13,
+    rating: 4.6,
+    sold: 12,
+    stock: 6,
+    merchantName: 'FTEIC Computer Store',
+    tags: ['server', 'rak server'],
+  },
+]
 
 function toProduct(seed: CatalogSeed, section: string): CatalogProduct {
   return {
@@ -344,6 +454,9 @@ function toProduct(seed: CatalogSeed, section: string): CatalogProduct {
     name: seed.name,
     price: seed.price,
     image: seed.image,
+    gallery: seed.gallery
+      ? [seed.image, ...seed.gallery]
+      : buildGallery(seed.id, seed.image, GALLERY_FRAME_COUNT),
     rating: seed.rating,
     sold: seed.sold,
     stock: seed.stock,

@@ -101,20 +101,22 @@ function NavBar({ searchValue, onSearchChange, onSearchSubmit }: NavBarProps) {
         </Link>
 
         <div className="navbar__search">
-          <img className="navbar__search-icon" src={searchIcon} alt="" aria-hidden="true" />
-          {isSearchEditable ? (
-            <input
-              className="navbar__search-input"
-              type="search"
-              aria-label="Cari barang"
-              placeholder={SEARCH_PLACEHOLDER}
-              value={searchValue ?? ''}
-              onChange={handleSearchChange}
-              onKeyDown={handleSearchKeyDown}
-            />
-          ) : (
-            <span className="navbar__search-placeholder">{SEARCH_PLACEHOLDER}</span>
-          )}
+          <div className="navbar__search-field">
+            <img className="navbar__search-icon" src={searchIcon} alt="" aria-hidden="true" />
+            {isSearchEditable ? (
+              <input
+                className="navbar__search-input"
+                type="search"
+                aria-label="Cari barang"
+                placeholder={SEARCH_PLACEHOLDER}
+                value={searchValue ?? ''}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
+              />
+            ) : (
+              <span className="navbar__search-placeholder">{SEARCH_PLACEHOLDER}</span>
+            )}
+          </div>
         </div>
 
         <div className="navbar__account" ref={accountRef}>
