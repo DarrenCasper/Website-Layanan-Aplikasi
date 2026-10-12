@@ -15,8 +15,8 @@ RUN npx prisma generate
 # Copy source files
 COPY . .
 
-# Expose server port
-EXPOSE 8000
+# Expose server port (must match PORT in .env — the app defaults to 4000)
+EXPOSE 4000
 
 # Start server using dev script
 CMD ["npm", "run", "dev"]
