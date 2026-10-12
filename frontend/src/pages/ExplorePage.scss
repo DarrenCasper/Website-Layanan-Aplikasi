@@ -53,11 +53,15 @@
   min-width: 0;
 }
 
+// The section heading sits above the cards, so it has to read as a level above
+// the card titles. Those are 16px/400, and the heading was 20px/400, which
+// differed only in size. It is now 20px/600, so the two are distinct in both
+// size and weight.
 .explore__heading {
   margin: 0;
   color: v.$catalog-surface;
   font-size: 20px;
-  font-weight: 400;
+  font-weight: 600;
   line-height: normal;
   white-space: nowrap;
 }
@@ -85,6 +89,16 @@
   }
 }
 
+// A uniform track grid, so every card in the section is exactly the same width.
+//
+// The trailing row is left short rather than stretched to fill the column. That
+// is deliberate: the alternative, letting the last row's cards grow, produces
+// wildly inconsistent sizes. The FTEIC section holds seven cards, so at 1440 a
+// three column grid leaves a single card in its last row, and stretching it
+// would draw that one card at roughly 875px against 285px for every card above
+// it. Cards that differ in size by a factor of three read as a broken layout far
+// more than an ordinary short row does, and a uniform grid is what the design
+// frame itself uses.
 .explore__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));

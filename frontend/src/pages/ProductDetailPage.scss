@@ -1,13 +1,13 @@
 @use '../styles/variables' as v;
 @use '../styles/focus' as f;
 
-// Product Description (Figma 43:107). Two white cards on the dark wave
-// backdrop: an item card holding the gallery, pricing, variant pills and
-// description, and a buy panel holding the quantity stepper and the add to
-// cart button.
+// Product Description (Figma 43:107). White cards on the dark wave backdrop:
+// an item card holding the gallery, pricing, variant pills and the merchant, a
+// buy panel holding the quantity stepper and the add to cart button, and the
+// description in a full width card below both.
 //
-// The frame draws both cards at fixed sizes inside a 1920 frame: an 1100px card,
-// a 40px gutter and a 500px panel, inset by 140px of side padding. Those
+// The frame draws the two cards at fixed sizes inside a 1920 frame: an 1100px
+// card, a 40px gutter and a 500px panel, inset by 140px of side padding. Those
 // numbers add up to 1880px of required window, so on anything narrower than a
 // 1920 monitor the buy panel and its add to cart button were simply cut off with
 // no way to reach them. The paddings and the panel widths now scale with the
@@ -29,6 +29,16 @@
   font-family: v.$font-auth;
 }
 
+// Holds the two column row and the description card beneath it, so both share
+// the same side inset and stack with one gap.
+.detail__content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  padding: 0 v.$detail-side-padding clamp(40px, 7.29vw, 140px);
+}
+
 // A proportional grid rather than a flex row. The frame's two cards sit in an
 // 1100:500 ratio, and that is exactly what these two columns express, so at 1920
 // the split reproduces the design to the pixel while narrower windows shrink
@@ -39,7 +49,6 @@
   gap: v.$detail-gutter;
   align-items: start;
   width: 100%;
-  padding: 0 v.$detail-side-padding clamp(40px, 7.29vw, 140px);
 }
 
 // --- item card -------------------------------------------------------------
@@ -75,9 +84,13 @@
   min-width: 0;
 }
 
+// Capped at the frame's 416px so the gallery column cannot outgrow the summary
+// beside it. Allowed to shrink below that on a narrow card, where a square
+// scaled to the full column would push the summary off screen.
 .detail__hero {
   display: block;
   width: 100%;
+  max-width: 416px;
   aspect-ratio: 1 / 1;
   border-radius: v.$catalog-radius-bar;
   object-fit: cover;
@@ -97,13 +110,20 @@
   gap: 10px;
 }
 
+// The selected frame is marked by dimming every other frame rather than by the
+// border alone. A 2px dark border sat directly against the thumbnail's own
+// artwork, so on the dark product photography it separated by about 1.14:1 and
+// was effectively invisible. Dimming the unselected frames makes the current
+// one obvious whatever the photo happens to be, and the border stays on as a
+// second, non-colour cue.
 .detail__thumb {
   width: 100%;
   aspect-ratio: 1 / 1;
   padding: 0;
   border: 2px solid transparent;
-  border-radius: 4px;
+  border-radius: v.$catalog-radius-card;
   background: transparent;
+  opacity: 0.5;
   overflow: hidden;
   cursor: pointer;
 
@@ -112,6 +132,7 @@
 
 .detail__thumb--selected {
   border-color: v.$catalog-text;
+  opacity: 1;
 }
 
 .detail__thumb-image {
@@ -121,21 +142,30 @@
   object-fit: cover;
 }
 
+// Top aligned rather than bottom aligned. Bottom alignment was only there to
+// line the summary up with the gallery, but on a product with no variants the
+// summary is much shorter than the gallery, so bottom alignment pushed it down
+// and left a block of empty white above the title. Starting at the top keeps
+// the title at the top of the card in every case.
 .detail__summary {
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
   gap: 20px;
-  justify-content: flex-end;
+  justify-content: flex-start;
   min-width: 0;
   overflow: hidden;
 }
 
+// `balance` evens the two lines out instead of filling the first and dropping
+// the remainder onto the second. Without it the longest names wrapped with a
+// single short word, "7800XD" on its own, stranded on the second line.
 .detail__title {
   margin: 0;
   font-size: 32px;
   font-weight: 700;
   line-height: normal;
+  text-wrap: balance;
 }
 
 .detail__price-block {
@@ -219,16 +249,20 @@
   line-height: normal;
 }
 
+// Sized to match the surrounding column, which sets its headings and body at
+// 20px. The field was 14px, so it read as a much smaller piece of UI than the
+// schedule title above it. The width grows with it so the date still fits.
 .detail__date-field {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 240px;
-  height: 40px;
-  padding: 10px 17px 10px 13px;
+  gap: 12px;
+  width: 280px;
+  max-width: 100%;
+  height: 52px;
+  padding: 0 16px;
   border: 1px solid v.$catalog-field-border;
-  border-radius: 6px;
+  border-radius: 8px;
   background: v.$catalog-surface;
 
   &:focus-within {
@@ -247,8 +281,8 @@
   background: transparent;
   color: v.$catalog-text;
   font-family: inherit;
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 20px;
+  line-height: normal;
   outline: none;
 
   // While empty the native control is hidden and the design's own placeholder
@@ -273,25 +307,35 @@
 
 .detail__date-placeholder {
   position: absolute;
-  left: 13px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
   color: v.$catalog-field-placeholder;
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 20px;
+  line-height: normal;
   pointer-events: none;
 }
 
+// The calendar glyph is a UI glyph, so it needs the 3:1 non-text bar rather
+// than the 4.5:1 body bar. At $catalog-field-placeholder (#71717a) it is
+// 4.83:1 on the white field. The 0.5 opacity that used to sit on top of that
+// halved it to roughly 1.98:1 and made the icon barely visible.
 .detail__date-icon {
   flex: none;
   color: v.$catalog-field-placeholder;
-  opacity: 0.5;
 }
 
+// Its own full width card below the two column row, so the description is no
+// longer what stretches the item card past the buy panel.
 .detail__description {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  width: 100%;
+  padding: clamp(20px, 2.08vw, 40px);
+  border-radius: v.$catalog-radius-bar;
+  background: v.$catalog-surface;
+  color: v.$catalog-text;
 }
 
 .detail__description-head {
@@ -315,10 +359,15 @@
   line-height: normal;
 }
 
+// The measure is capped rather than left to fill the card. The body sits in a
+// card that is over 1100px wide at 1920, and running 20px text across that full
+// width produced lines far past a comfortable reading length. 72ch is the usual
+// upper bound for body copy.
 .detail__description-body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  max-width: 72ch;
   font-size: 20px;
   font-weight: 400;
   line-height: normal;
@@ -409,10 +458,13 @@
   border-bottom: 1px solid v.$catalog-hairline;
 }
 
+// 600 to match the other three headings in this card (the schedule title, the
+// description title and the variant title). It was 700, which made the buy
+// panel the only place on the page using that weight at this size.
 .detail__buy-title {
   margin: 0;
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: normal;
 }
 
@@ -512,6 +564,52 @@
   border-radius: v.$catalog-radius-control;
 }
 
+// --- order summary ---------------------------------------------------------
+
+// The variant, pickup date and stock, listed as label and value pairs. These
+// are the choices the buyer has already made above, gathered next to the button
+// so they can be checked without scrolling back. It also gives the panel enough
+// content to sit level with the item card beside it.
+.detail__buy-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+
+.detail__buy-fact {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.detail__buy-fact-label {
+  color: v.$catalog-text-muted;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+// The stock figure lives here as an ordinary summary row. It used to be a
+// standalone 20px line at $catalog-text-soft, which measured 19.9:1 on the
+// white panel, higher than the add to cart button's own 18.26:1. The most
+// prominent text in the panel was the stock count rather than the action.
+// The stock figure lives here as an ordinary summary row. It used to be a
+// standalone 20px line at $catalog-text-soft, which measured 19.9:1 on the
+// white panel, higher than the add to cart button's own 18.26:1. The most
+// prominent text in the panel was the stock count rather than the action. At
+// $catalog-text-muted it is 5.66:1, clearly supporting information beneath the
+// 18.26:1 primary button while still clearing the 4.5:1 body bar.
+.detail__buy-fact-value {
+  margin: 0;
+  color: v.$catalog-text-muted;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: normal;
+  text-align: right;
+}
+
 .detail__quantity-button {
   display: flex;
   align-items: center;
@@ -543,15 +641,6 @@
   line-height: normal;
 }
 
-.detail__stock {
-  margin: 0;
-  color: v.$catalog-text-soft;
-  font-size: 20px;
-  font-weight: 400;
-  line-height: normal;
-  white-space: nowrap;
-}
-
 .detail__cart-button {
   width: 100%;
   padding: 20px;
@@ -579,10 +668,13 @@
 // panel moves under the item card and goes full width, so the add to cart button
 // keeps its full-width hit area instead of being squeezed off the right edge.
 @media (max-width: v.$breakpoint-catalog-stack) {
+  .detail__content {
+    padding: 0 v.$detail-side-padding-stacked clamp(32px, 4vw, 60px);
+  }
+
   .detail__body {
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;
-    padding: 0 v.$detail-side-padding-stacked clamp(32px, 4vw, 60px);
   }
 
   .detail__buy {
@@ -620,9 +712,13 @@
 }
 
 @media (max-width: v.$breakpoint-catalog-mobile) {
-  .detail__body {
+  .detail__content {
     gap: 20px;
     padding: 0 v.$detail-side-padding-mobile 40px;
+  }
+
+  .detail__body {
+    gap: 20px;
   }
 
   .detail__title,
@@ -636,7 +732,6 @@
   }
 
   .detail__stats,
-  .detail__stock,
   .detail__buy-subtitle {
     font-size: 16px;
   }
@@ -647,7 +742,12 @@
     max-width: none;
   }
 
-  // The stepper and the stock line stop fitting side by side here.
+  .detail__hero {
+    max-width: none;
+  }
+
+  // The stepper no longer has the stock line beside it to share a row with, so
+  // it takes the full panel width.
   .detail__quantity-row {
     flex-direction: column;
     align-items: stretch;

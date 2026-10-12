@@ -59,6 +59,16 @@ $catalog-text-soft: #09090b;
 // 5.67:1, and keeps the token translucent so it still blends with whatever
 // surface it is placed on.
 $catalog-text-muted: rgba(21, 21, 21, 0.65);
+// Decorative glyphs that carry no information of their own, such as the card's
+// three dot mark. These only need the 3:1 non-text bar rather than the 4.5:1
+// body bar, and sit lighter than $catalog-text-muted so the type hierarchy still
+// reads. #8a8a8a is 3.45:1 on the white card.
+//
+// The SVG asset draws its stroke with `currentColor`, so this token is what
+// actually colours the glyph: ProductCard.scss sets `color` from it. That keeps
+// the contrast decision in the token sheet rather than baked into the asset,
+// where it could not be reviewed alongside the rest of the palette.
+$catalog-glyph-subtle: #8a8a8a;
 $catalog-on-dark-muted: rgba(255, 255, 255, 0.5);
 $catalog-hairline: rgba(0, 0, 0, 0.1);
 $catalog-nav-bg: rgba(255, 255, 255, 0.05);
