@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit"
+import rateLimit, { ipKeyGenerator } from "express-rate-limit"
 import { type Request } from "express"
 
 export const otpRequestLimiter = rateLimit({
@@ -32,5 +32,5 @@ export const catalogMutationLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req: Request) => req.userId ?? req.ip ?? "unknown",
+    keyGenerator: (req: Request) => req.userId ?? ipKeyGenerator(req.ip ?? "unknown"),
 })
