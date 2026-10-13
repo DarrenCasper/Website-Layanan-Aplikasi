@@ -1,0 +1,175 @@
+@use '../styles/variables' as v;
+
+// Loading placeholders shared by the Explore grid and the Product Description
+// screen.
+//
+// The block and line primitives below only define fill and size. The shapes
+// they sit in come from the real components (`.product-card`, `.detail__card`
+// and friends), so a placeholder occupies the same box as the content that
+// replaces it and the page does not shift when the catalog resolves.
+
+// --- primitives ------------------------------------------------------------
+
+// A single grey shape. Sizing is left to the caller or to the modifier classes
+// further down, so this can stand in for an image, an avatar or a control.
+.skeleton-block {
+  display: block;
+  background-color: v.$catalog-skeleton-bg;
+}
+
+.skeleton-line {
+  display: block;
+  width: 100%;
+  height: 20px;
+  border-radius: v.$radius-sm;
+  background-color: v.$catalog-skeleton-bg;
+}
+
+// One sweep across both primitives. The gradient is wider than the shape and
+// travels from off the left edge to off the right edge, so the highlight never
+// appears to start or stop mid-shape.
+.skeleton-block,
+.skeleton-line {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    v.$catalog-skeleton-shine 50%,
+    transparent 100%
+  );
+  background-repeat: no-repeat;
+  background-position: -140% 0;
+  background-size: 60% 100%;
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-sweep {
+  from {
+    background-position: -140% 0;
+  }
+
+  to {
+    background-position: 240% 0;
+  }
+}
+
+// A placeholder is decoration, so the movement is optional. Dropping the sweep
+// still leaves the shapes readable because the flat fill remains.
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block,
+  .skeleton-line {
+    background-image: none;
+    animation: none;
+  }
+}
+
+// --- explore card ----------------------------------------------------------
+
+// The card box model comes from `.product-card`, so this only has to stop the
+// placeholder from behaving like a control.
+.skeleton-card {
+  cursor: default;
+}
+
+// The text block is a fixed height on the real card, so these three lines are
+// sized to the real name, price and stats line boxes and sit on the same
+// 6px rhythm. Widths vary so the block does not read as a solid bar.
+.skeleton-line--name {
+  width: 72%;
+  height: 20px;
+}
+
+.skeleton-line--price {
+  width: 46%;
+  height: 20px;
+}
+
+.skeleton-line--meta {
+  width: 58%;
+  height: 15px;
+}
+
+// --- product description ---------------------------------------------------
+
+// Title and price both render at 32px on the real page, whose line box is 39px.
+.skeleton-line--title {
+  width: 78%;
+  height: 39px;
+}
+
+.skeleton-line--amount {
+  width: 44%;
+  height: 39px;
+}
+
+// The muted 20px lines: stats, the description subtitle, the merchant city.
+.skeleton-line--stats {
+  width: 32%;
+  height: 24px;
+}
+
+// A 24px section heading.
+.skeleton-line--label {
+  width: 40%;
+  height: 29px;
+}
+
+// The 240x40 date control.
+.skeleton-line--field {
+  width: 240px;
+  height: 40px;
+  border-radius: v.$radius-md;
+}
+
+// The label beside the buy panel's 100px thumbnail.
+.skeleton-line--buy-text {
+  width: 55%;
+  height: 24px;
+}
+
+// The quantity stepper is 68px tall on a 16px radius, the add to cart button
+// 69px. Matching both keeps the panel the same height before and after load.
+.skeleton-line--qty {
+  width: 100%;
+  height: 68px;
+  border-radius: v.$catalog-radius-control;
+}
+
+.skeleton-line--cart {
+  width: 100%;
+  height: 69px;
+  border-radius: v.$catalog-radius-control;
+}
+
+// A body paragraph line. Four two line groups stand in for the description, so
+// the block lands close to the height of the real prose.
+.skeleton-line--para {
+  width: 100%;
+  height: 24px;
+}
+
+// The last line of a paragraph never runs the full measure.
+.skeleton-line--para-short {
+  width: 72%;
+}
+
+.skeleton-paragraph {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+// --- screen reader status --------------------------------------------------
+
+// Carries the loading announcement for assistive technology without adding a
+// visible element to the layout.
+.skeleton-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}

@@ -45,3 +45,91 @@ $auth-radius-mark: 20px;
 $breakpoint-art-hide: 1200px;
 $breakpoint-mobile: 640px;
 $font-auth: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+// Catalog tokens, taken from the Figma Explore Page (25:2) and
+// ProductDescription (43:107) frames. Those frames sit on the same dark wave
+// backdrop as the auth screens, so the surface colours there are reused for the
+// cards and panels layered on top of it.
+$catalog-surface: #ffffff;
+$catalog-text: #151515;
+$catalog-text-soft: #09090b;
+// Secondary copy on the white cards (card stats, subtitles, the stock line).
+// At 0.5 alpha this resolved to #8a8a8a on white, a 3.45:1 ratio, which is
+// below the 4.5:1 bar for body text. 0.65 alpha resolves to #676767, about
+// 5.67:1, and keeps the token translucent so it still blends with whatever
+// surface it is placed on.
+$catalog-text-muted: rgba(21, 21, 21, 0.65);
+// Decorative glyphs that carry no information of their own, such as the card's
+// three dot mark. These only need the 3:1 non-text bar rather than the 4.5:1
+// body bar, and sit lighter than $catalog-text-muted so the type hierarchy still
+// reads. #8a8a8a is 3.45:1 on the white card.
+//
+// The SVG asset draws its stroke with `currentColor`, so this token is what
+// actually colours the glyph: ProductCard.scss sets `color` from it. That keeps
+// the contrast decision in the token sheet rather than baked into the asset,
+// where it could not be reviewed alongside the rest of the palette.
+$catalog-glyph-subtle: #8a8a8a;
+$catalog-on-dark-muted: rgba(255, 255, 255, 0.5);
+$catalog-hairline: rgba(0, 0, 0, 0.1);
+$catalog-nav-bg: rgba(255, 255, 255, 0.05);
+$catalog-panel-bg: rgba(255, 255, 255, 0.2);
+// Secondary copy inside a panel, meaning anything sitting on $catalog-panel-bg
+// rather than directly on the page backdrop. The panel's own translucent white
+// fill lightens the surface underneath it, which costs $catalog-on-dark-muted
+// its contrast: 0.5 alpha over the panel resolves to #a2a2a2, a 3.81:1 ratio,
+// below the 4.5:1 bar. 0.72 alpha resolves to #cbcbcb, about 6.0:1, and still
+// reads as clearly secondary against the white headings beside it.
+$catalog-on-panel-muted: rgba(255, 255, 255, 0.72);
+// Error copy on the same panel. $auth-danger resolves to 3.51:1 against the
+// lightened panel, so panel errors use this lighter red, which is 4.83:1.
+$catalog-on-panel-danger: #ff9b9b;
+$catalog-field-border: #e4e4e7;
+$catalog-field-placeholder: #71717a;
+$catalog-radius-card: 10px;
+$catalog-radius-bar: 20px;
+$catalog-radius-control: 16px;
+// Skeleton fills. The base sits on the white cards, the shine sweeps over it.
+$catalog-skeleton-bg: rgba(21, 21, 21, 0.08);
+$catalog-skeleton-shine: rgba(21, 21, 21, 0.04);
+// Focus ring. Two tones so one of them always separates from the surface:
+// the light ring reads on the dark backdrop, the dark ring reads on the cards.
+$catalog-focus-ring-light: #ffffff;
+$catalog-focus-ring-dark: #151515;
+
+// Width the Explore page reserves for its filter column. Named because the
+// panel, the collapse breakpoint and the sticky offset all have to agree.
+$catalog-filter-width: 490px;
+// Product Detail layout. The frame draws an 1100px item card, a 40px gutter and
+// a 500px buy panel inside 140px of side padding, which needs 1880px of window.
+// The card and the panel are laid out as an 11fr:5fr grid, the same ratio those
+// two widths express, so the split matches the frame at 1920 and shrinks
+// proportionally below it. The gutter and the side padding are named here
+// because the body, the card and the collapse breakpoint all have to agree.
+$detail-gutter: clamp(20px, 2.08vw, 40px);
+// The item card's side inset, restated as the navbar's own content inset so the
+// card and the brand mark above it share a left edge. That inset is the bar's
+// 20px wrapper padding plus its 40px pill padding, which is a flat 60px at every
+// width where the bar is in its wide layout. Holding the frame's 140px instead
+// left the card 80px to the right of the brand mark on the very width the frame
+// was drawn at. The collapsed navbar uses its own two insets, so those are named
+// separately below and the card follows the bar rather than the viewport.
+$detail-side-padding: 60px;
+// Collapsed navbar inset: 16px of bar padding plus 20px of pill padding.
+$detail-side-padding-stacked: 36px;
+// Mobile navbar inset: 12px of bar padding plus 16px of pill padding.
+$detail-side-padding-mobile: 32px;
+// Below this the filter column stops being a column and the detail page stops
+// being two columns. Both layouts collapse to one at the same point so the two
+// screens change shape together.
+$breakpoint-catalog-stack: 1280px;
+// Below this the filter controls stack to a single column.
+$breakpoint-catalog-compact: 900px;
+// Below this the catalog pages use their smallest padding and type scale.
+$breakpoint-catalog-mobile: 640px;
+
+// Height of the sticky NavBar (`.navbar`) on the catalog screens. The Explore
+// page pins its filter column directly below the bar, so the measured height
+// lives here instead of being guessed in two places. It comes from the 48px
+// brand mark plus the 20px bar padding plus the 20px navbar wrapper padding,
+// with the 40px wordmark's line box adding the final pixel.
+$catalog-navbar-height: 129px;

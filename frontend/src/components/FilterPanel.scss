@@ -1,0 +1,343 @@
+@use '../styles/variables' as v;
+@use '../styles/focus' as f;
+
+// Filter column for the Explore page.
+//
+// The Figma frame reserves a 490px column on the left and leaves it as an empty
+// translucent panel. It now holds the category, price and sort controls. On
+// desktop it stays pinned below the sticky navbar and scrolls its own content;
+// once the layout drops to one column it collapses behind a toggle so the grid
+// gets the full width back.
+
+// The column is sticky and capped at the viewport height so a long category
+// list scrolls inside the panel instead of running past the fold, where a
+// pinned panel could never be scrolled to. It is capped rather than fixed so a
+// short filter list lets the panel hug its own content, which keeps the dark
+// panel from trailing a large empty tail under the last group.
+.explore__filter {
+  position: sticky;
+  top: calc(#{v.$catalog-navbar-height});
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: v.$catalog-filter-width;
+  height: calc(100svh - #{v.$catalog-navbar-height} - 40px);
+}
+
+// The toggle only exists in the collapsed layout, so it is hidden by default.
+.filter-panel__toggle {
+  display: none;
+
+  @include f.focus-ring-light;
+}
+
+// --- the panel -------------------------------------------------------------
+
+.filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-height: 0;
+  height: 100%;
+  padding: 24px;
+  border-radius: v.$catalog-radius-bar;
+  background: v.$catalog-panel-bg;
+  overflow-y: auto;
+}
+
+.filter-panel__head {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.filter-panel__title {
+  margin: 0;
+  color: v.$catalog-surface;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.filter-panel__reset {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: v.$catalog-surface;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  cursor: pointer;
+
+  @include f.focus-ring-light;
+}
+
+.filter-panel__summary {
+  margin: -16px 0 0;
+  color: v.$catalog-on-panel-muted;
+  font-size: 14px;
+  line-height: normal;
+}
+
+// --- groups ----------------------------------------------------------------
+
+.filter-panel__group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid v.$auth-divider;
+}
+
+// The first group follows the summary, which already separates it.
+.filter-panel__group:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.filter-panel__group-title {
+  margin: 0;
+  color: v.$catalog-surface;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.filter-panel__empty,
+.filter-panel__hint {
+  margin: 0;
+  color: v.$catalog-on-panel-muted;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.filter-panel__error {
+  margin: 0;
+  color: v.$catalog-on-panel-danger;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+// --- category chips --------------------------------------------------------
+
+.filter-panel__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-chip {
+  padding: 8px 14px;
+  border: 1px solid v.$auth-divider;
+  border-radius: v.$catalog-radius-control;
+  background: rgba(255, 255, 255, 0.08);
+  color: v.$catalog-surface;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: normal;
+  white-space: nowrap;
+  cursor: pointer;
+
+  @include f.focus-ring-light;
+}
+
+.filter-chip--selected {
+  border-color: v.$catalog-surface;
+  background: v.$catalog-surface;
+  color: v.$catalog-text;
+  font-weight: 600;
+}
+
+.filter-panel__more {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: v.$catalog-surface;
+  font-family: inherit;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+
+  @include f.focus-ring-light;
+}
+
+// --- price range -----------------------------------------------------------
+
+.filter-panel__price-row {
+  display: flex;
+  gap: 12px;
+}
+
+.filter-panel__price-field {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.filter-panel__price-label {
+  color: v.$catalog-on-panel-muted;
+  font-size: 12px;
+  line-height: normal;
+}
+
+// The field keeps a light fill and dark text so the entered amount reads at the
+// same contrast the rest of the catalog's inputs do.
+.filter-panel__price-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid v.$catalog-field-border;
+  border-radius: v.$radius-md;
+  background: v.$catalog-surface;
+
+  // The field itself carries no border, so the ring goes on the wrapper, which
+  // is the box the user sees. `focus-within` covers the input inside it.
+  &:focus-within {
+    box-shadow:
+      0 0 0 3px v.$catalog-focus-ring-light,
+      0 0 0 5px rgba(21, 21, 21, 0.85);
+  }
+}
+
+.filter-panel__price-prefix {
+  flex: none;
+  color: v.$catalog-field-placeholder;
+  font-size: 14px;
+  line-height: normal;
+}
+
+.filter-panel__price-input {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: v.$catalog-text;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: normal;
+  outline: none;
+}
+
+// --- sort ------------------------------------------------------------------
+
+.filter-panel__sorts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-sort {
+  padding: 8px 14px;
+  border: 1px solid v.$auth-divider;
+  border-radius: v.$catalog-radius-control;
+  background: rgba(255, 255, 255, 0.08);
+  color: v.$catalog-surface;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: normal;
+  white-space: nowrap;
+  cursor: pointer;
+
+  @include f.focus-ring-light;
+}
+
+.filter-sort--selected {
+  border-color: v.$catalog-surface;
+  background: v.$catalog-surface;
+  color: v.$catalog-text;
+  font-weight: 600;
+}
+
+// --- collapsed layout ------------------------------------------------------
+
+// Below the stack breakpoint the filter stops being a sidebar: the toggle takes
+// its place and the panel only appears once it is opened, so the grid can use
+// the full content width.
+@media (max-width: v.$breakpoint-catalog-stack) {
+  .explore__filter {
+    position: static;
+    width: 100%;
+    max-height: none;
+  }
+
+  .filter-panel__toggle {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 14px 20px;
+    border: 0;
+    border-radius: v.$catalog-radius-control;
+    background: v.$catalog-panel-bg;
+    color: v.$catalog-surface;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: normal;
+    cursor: pointer;
+  }
+
+  .filter-panel__toggle-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 12px;
+    background: v.$catalog-surface;
+    color: v.$catalog-text;
+    font-size: 13px;
+  }
+
+  // Collapsed by default. The panel keeps its own scroll only on desktop, so
+  // here it is allowed to grow with its content.
+  .filter-panel {
+    display: none;
+  }
+
+  .filter-panel--open {
+    display: flex;
+    margin-top: 12px;
+    overflow: visible;
+  }
+
+  // The toggle sits directly above the panel and already says "Filter", so the
+  // panel's own heading would just repeat the word immediately below it. The
+  // head still holds the reset button, so it is kept and only the title goes.
+  .filter-panel__title {
+    display: none;
+  }
+
+  .filter-panel__summary {
+    margin-top: 0;
+  }
+
+  .explore__filter {
+    height: 100%;
+    max-height: calc(100svh - #{v.$catalog-navbar-height} - 40px);
+  }
+}
+
+// --- narrow controls -------------------------------------------------------
+
+// Once the controls are this narrow the two price fields stop fitting side by
+// side, so they stack.
+@media (max-width: v.$breakpoint-catalog-compact) {
+  .filter-panel__price-row {
+    flex-direction: column;
+  }
+}

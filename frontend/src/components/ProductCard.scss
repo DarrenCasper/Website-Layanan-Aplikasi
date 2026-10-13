@@ -1,0 +1,102 @@
+@use '../styles/variables' as v;
+@use '../styles/focus' as f;
+
+// Explore grid tile, taken from the ItemFrame component (26:56) that the
+// Explore Page (25:2) repeats. The width comes from the Explore grid track, so
+// every row stretches to fill its column. The card paints a white surface and
+// pins a fixed height text block to the bottom so every card lines up regardless
+// of how long the product name runs.
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 12px;
+  border: 0;
+  border-radius: v.$catalog-radius-card;
+  background: v.$catalog-surface;
+  color: v.$catalog-text;
+  font-family: inherit;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+
+  @include f.focus-ring-dark;
+}
+
+// The image follows the card's own corner radius. It was drawn at 4px inside a
+// 10px card, so the artwork sat in a visibly tighter corner than the surface it
+// was painted on.
+.product-card__image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: v.$catalog-radius-card;
+  object-fit: cover;
+}
+
+// Fixed height sized for the tallest case, a two line name, so that every card
+// in a row puts its price and metadata on the same baseline. A single line name
+// leaves its spare line above the text, because the block is bottom aligned.
+.product-card__texts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: space-between;
+  height: 87px;
+  overflow: hidden;
+}
+
+// Names clamp to two lines instead of running to one. A single ellipsised line
+// cut most of the catalog's longer names mid-word, which made the grid hard to
+// scan, and the extra line still fits the fixed height above.
+.product-card__name {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.product-card__price {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.product-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+// Rating and sold count sit on one line, separated by a middle dot.
+.product-card__stats {
+  min-width: 0;
+  color: v.$catalog-text-muted;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// The three dot mark on the card. The asset strokes with `currentColor`, so the
+// glyph's contrast is set here from $catalog-glyph-subtle (3.45:1 on the white
+// card, clearing the 3:1 bar for a glyph that carries no information of its
+// own). The original asset drew the stroke at 25% opacity, which composited to
+// roughly 1.8:1 and was effectively invisible.
+.product-card__cart {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: v.$catalog-glyph-subtle;
+}
