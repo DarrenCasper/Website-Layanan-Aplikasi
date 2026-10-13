@@ -19,19 +19,21 @@ function ProductCard({ product, onClick }: ProductCardProps) {
         <span className="product-card__name" title={product.name}>
           {product.name}
         </span>
-        <span className="product-card__price">{formatRupiah(product.price)}</span>
+        <div>
+          <span className="product-card__price">{formatRupiah(product.price)}</span>
 
-        <span className="product-card__meta">
-          {/* Rating and sold count separated by a middle dot rather than a pipe.
-              A pipe is a table character that reads as punctuation clutter
-              inside a card, and the two figures are not parallel data. The
-              separator is a real character so it survives a copy or a screen
-              reader, and a space either side keeps it legible as a separator. */}
-          <span className="product-card__stats">
-            {product.rating.toFixed(1)} · {product.sold} terjual
+          <span className="product-card__meta">
+            {/* Rating and sold count separated by a middle dot rather than a pipe.
+                A pipe is a table character that reads as punctuation clutter
+                inside a card, and the two figures are not parallel data. The
+                separator is a real character so it survives a copy or a screen
+                reader, and a space either side keeps it legible as a separator. */}
+            <span className="product-card__stats">
+              {product.rating.toFixed(1)} · {product.sold} terjual
+            </span>
+            <img className="product-card__cart" src={cartAddIcon} alt="" aria-hidden="true" />
           </span>
-          <img className="product-card__cart" src={cartAddIcon} alt="" aria-hidden="true" />
-        </span>
+        </div>
       </span>
     </button>
   )

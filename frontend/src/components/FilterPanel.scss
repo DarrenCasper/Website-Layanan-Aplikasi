@@ -16,12 +16,12 @@
 // panel from trailing a large empty tail under the last group.
 .explore__filter {
   position: sticky;
-  top: calc(#{v.$catalog-navbar-height} + 20px);
+  top: calc(#{v.$catalog-navbar-height});
   display: flex;
   flex: none;
   flex-direction: column;
   width: v.$catalog-filter-width;
-  max-height: calc(100svh - #{v.$catalog-navbar-height} - 40px);
+  height: calc(100svh - #{v.$catalog-navbar-height} - 40px);
 }
 
 // The toggle only exists in the collapsed layout, so it is hidden by default.
@@ -38,6 +38,7 @@
   flex-direction: column;
   gap: 28px;
   min-height: 0;
+  height: 100%;
   padding: 24px;
   border-radius: v.$catalog-radius-bar;
   background: v.$catalog-panel-bg;
@@ -323,6 +324,11 @@
 
   .filter-panel__summary {
     margin-top: 0;
+  }
+
+  .explore__filter {
+    height: 100%;
+    max-height: calc(100svh - #{v.$catalog-navbar-height} - 40px);
   }
 }
 

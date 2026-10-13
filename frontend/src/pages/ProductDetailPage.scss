@@ -437,7 +437,7 @@
 // trails into a gap.
 .detail__buy {
   position: sticky;
-  top: calc(#{v.$catalog-navbar-height} + 20px);
+  top: calc(#{v.$catalog-navbar-height});
   display: flex;
   flex-direction: column;
   gap: 32px;
