@@ -45,7 +45,7 @@
   flex-direction: column;
   gap: 20px;
   min-width: 0;
-  padding: 20px 90px 20px 0;
+  padding: 20px 20px 20px 0;
   overflow: hidden;
 }
 
@@ -111,7 +111,7 @@
 // frame itself uses.
 .explore__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
   gap: 0;
   align-items: start;
   border-radius: v.$catalog-radius-card;
