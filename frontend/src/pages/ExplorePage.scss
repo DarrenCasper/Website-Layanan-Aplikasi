@@ -1,22 +1,20 @@
 @use '../styles/variables' as v;
 @use '../styles/focus' as f;
 
-// Explore Page (Figma 25:2). 1920x1080 frame: the dark wave backdrop shared
-// with the auth screens, the sticky bar, a 490px filter column pinned below that
-// bar and sized to the viewport, and the two product sections stacked in one
-// column to its right, so both sections share the same left edge and width.
+// Explore Page (Figma 25:2). The newest frame drops the wave backdrop and
+// paints the page a flat #151515, so the bar and the content row sit on one
+// unbroken dark field. 1920x1080 frame: the full bleed sticky bar, a 490px
+// filter column, and the product sections stacked in the column to its right.
+// The second section sits in that same column so both share a left edge and a
+// width, matching the frame, which draws one grid at 510px.
 
 .explore {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0;
   width: 100%;
   min-height: 100svh;
   background-color: v.$auth-bg;
-  background-image: url('../assets/auth-pattern.png');
-  background-repeat: repeat;
-  background-position: top left;
-  background-size: 200px 40px;
   color: v.$auth-text;
   font-family: v.$font-auth;
 }
@@ -26,7 +24,6 @@
   gap: 20px;
   align-items: flex-start;
   width: 100%;
-  padding: 0 20px;
 }
 
 // Pinned so the filters stay reachable while the grids scroll. The column's own
@@ -37,12 +34,18 @@
 // it takes a zero basis and grows into the remaining width. The `min-width: 0`
 // lets it shrink below its content width, and the clipping keeps a wide grid
 // from spilling into the filter column.
+//
+// The frame insets this column by 20px at the top and bottom and 90px on the
+// right, which is what puts the heading at y=110 and the grid at y=154 in a
+// 1080 frame. The left inset is zero because the grid is meant to start at
+// x=510, exactly where the 490px filter column ends.
 .explore__items {
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
-  gap: 50px;
+  gap: 20px;
   min-width: 0;
+  padding: 20px 20px 20px 0;
   overflow: hidden;
 }
 
@@ -53,15 +56,15 @@
   min-width: 0;
 }
 
-// The section heading sits above the cards, so it has to read as a level above
-// the card titles. Those are 16px/400, and the heading was 20px/400, which
-// differed only in size. It is now 20px/600, so the two are distinct in both
-// size and weight.
+// The section heading sits above the cards. The frame draws it at the same
+// 20px/400 as the card titles and leaves the two levels distinct by position and
+// by the 20px of space beneath it, so the weight follows the design rather than
+// carrying its own emphasis.
 .explore__heading {
   margin: 0;
   color: v.$catalog-surface;
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: normal;
   white-space: nowrap;
 }
@@ -91,6 +94,13 @@
 
 // A uniform track grid, so every card in the section is exactly the same width.
 //
+// The frame butts its 220px cards directly against one another with no gutter,
+// so the grid draws them flush and puts the 1px hairline on each card, which
+// reads as a single hairline grid rather than a row of separated tiles. The
+// rounded corner lives on the grid box, and the clipping is what makes that
+// radius visible: the first and last cards would otherwise paint square corners
+// over it.
+//
 // The trailing row is left short rather than stretched to fill the column. That
 // is deliberate: the alternative, letting the last row's cards grow, produces
 // wildly inconsistent sizes. The FTEIC section holds seven cards, so at 1440 a
@@ -101,14 +111,17 @@
 // frame itself uses.
 .explore__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  gap: 0;
   align-items: start;
+  border-radius: v.$catalog-radius-card;
+  overflow: hidden;
 }
 
+// Sits inside the items column, so it only needs the same left inset the grid
+// has, which is zero here.
 .explore__notice {
   margin: 0;
-  padding: 0 20px 20px;
   color: v.$catalog-on-dark-muted;
   font-size: 16px;
   line-height: normal;
@@ -183,6 +196,7 @@
   // content restores both the cards and the scroll.
   .explore__items {
     flex: none;
+    padding: 20px;
     overflow: visible;
   }
 
@@ -192,12 +206,9 @@
 }
 
 @media (max-width: v.$breakpoint-catalog-mobile) {
-  .explore__content {
-    padding: 0 16px;
-  }
-
   .explore__items {
     gap: 36px;
+    padding: 16px;
   }
 
   .explore__empty {

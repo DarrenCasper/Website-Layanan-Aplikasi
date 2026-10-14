@@ -1,10 +1,12 @@
 @use '../styles/variables' as v;
 @use '../styles/focus' as f;
 
-// Sticky translucent bar shared by the Explore Page (25:2) and the Product
-// Description page (43:107). Both frames draw the same 1920-wide pill: 20px
-// wrapper padding, a 4px backdrop blur over a 5% white fill, and 80px between
-// the brand, the search field and the account link.
+// Sticky bar shared by the Explore Page (25:2) and the Product Description
+// page (43:107). The newest Explore frame draws it full bleed: the bar runs edge
+// to edge at 90px tall, painted the same #151515 as the page and closed off by a
+// single 1px translucent hairline along its bottom edge. There is no wrapper
+// padding, no rounded corner and no pill shape. The 80px between the brand, the
+// search field and the account link is unchanged.
 
 .navbar {
   // Height is mirrored by $catalog-navbar-height; the Explore filter column
@@ -15,8 +17,6 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 20px;
-  padding-bottom: 0;
 }
 
 .navbar__bar {
@@ -25,7 +25,8 @@
   gap: 80px;
   width: 100%;
   padding: 20px 40px;
-  border-radius: v.$catalog-radius-bar;
+  border-bottom: 1px solid v.$catalog-nav-border;
+  border-radius: 0;
   background: v.$catalog-nav-bg;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -50,11 +51,15 @@
   background: v.$catalog-surface;
 }
 
+// Inter's normal line box is roughly 1.66em, so the 40px wordmark would stand
+// about 66px tall and stretch the bar past the design's 90px. Pinning the line
+// box to 1.2 keeps it at 48px, the same height as the brand mark beside it, so
+// the bar's content row is exactly 48px and the whole bar lands on 90px.
 .navbar__wordmark {
   color: v.$catalog-surface;
   font-size: 40px;
   font-weight: 700;
-  line-height: normal;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
@@ -185,10 +190,6 @@
 // breakpoint the gaps and padding tighten and the greeting is allowed to
 // shrink and truncate instead of overflowing.
 @media (max-width: v.$breakpoint-catalog-stack) {
-  .navbar {
-    padding: 16px;
-  }
-
   .navbar__bar {
     gap: 24px;
     padding: 14px 20px;

@@ -193,14 +193,14 @@ function ExplorePage() {
               ) : null}
             </>
           )}
+
+          {showNotice ? (
+            <p className="explore__notice">
+              Katalog contoh ditampilkan karena belum ada barang dari penjual.
+            </p>
+          ) : null}
         </div>
       </div>
-
-      {showNotice ? (
-        <p className="explore__notice">
-          Katalog contoh ditampilkan karena belum ada barang dari penjual.
-        </p>
-      ) : null}
     </main>
   )
 }
