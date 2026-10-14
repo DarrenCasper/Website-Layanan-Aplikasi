@@ -37,6 +37,11 @@ jobs:
       github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'frontend' || github.event.inputs.service == 'both'))
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # Fetches the previous commit so paths-filter can diff the push
+
       - name: Detect frontend changes
         id: filter
         if: github.event_name == 'push'
@@ -60,6 +65,11 @@ jobs:
       github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.service == 'backend' || github.event.inputs.service == 'both'))
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # Fetches the previous commit so paths-filter can diff the push
+
       - name: Detect backend changes
         id: filter
         if: github.event_name == 'push'
