@@ -71,18 +71,17 @@ $catalog-text-muted: rgba(21, 21, 21, 0.65);
 $catalog-glyph-subtle: #8a8a8a;
 $catalog-on-dark-muted: rgba(255, 255, 255, 0.5);
 $catalog-hairline: rgba(0, 0, 0, 0.1);
-$catalog-nav-bg: rgba(255, 255, 255, 0.05);
+// Navbar fill and its bottom hairline, taken from the newest Explore frame
+// (25:2). The bar is painted the same #151515 as the page it sits on, so it is
+// not a translucent overlay any more, and the only thing separating it from the
+// content below is a single 1px translucent white edge.
+$catalog-nav-bg: #151515;
+$catalog-nav-border: rgba(255, 255, 255, 0.2);
+// Translucent white surface. Only the Explore page's empty state uses it now:
+// the filter column used to be painted with it, but the newest frame draws that
+// column the same #151515 as the page, so its copy moved to
+// $catalog-on-dark-muted and its error copy to $auth-danger.
 $catalog-panel-bg: rgba(255, 255, 255, 0.2);
-// Secondary copy inside a panel, meaning anything sitting on $catalog-panel-bg
-// rather than directly on the page backdrop. The panel's own translucent white
-// fill lightens the surface underneath it, which costs $catalog-on-dark-muted
-// its contrast: 0.5 alpha over the panel resolves to #a2a2a2, a 3.81:1 ratio,
-// below the 4.5:1 bar. 0.72 alpha resolves to #cbcbcb, about 6.0:1, and still
-// reads as clearly secondary against the white headings beside it.
-$catalog-on-panel-muted: rgba(255, 255, 255, 0.72);
-// Error copy on the same panel. $auth-danger resolves to 3.51:1 against the
-// lightened panel, so panel errors use this lighter red, which is 4.83:1.
-$catalog-on-panel-danger: #ff9b9b;
 $catalog-field-border: #e4e4e7;
 $catalog-field-placeholder: #71717a;
 $catalog-radius-card: 10px;
@@ -107,17 +106,18 @@ $catalog-filter-width: 490px;
 // because the body, the card and the collapse breakpoint all have to agree.
 $detail-gutter: clamp(20px, 2.08vw, 40px);
 // The item card's side inset, restated as the navbar's own content inset so the
-// card and the brand mark above it share a left edge. That inset is the bar's
-// 20px wrapper padding plus its 40px pill padding, which is a flat 60px at every
-// width where the bar is in its wide layout. Holding the frame's 140px instead
-// left the card 80px to the right of the brand mark on the very width the frame
-// was drawn at. The collapsed navbar uses its own two insets, so those are named
-// separately below and the card follows the bar rather than the viewport.
-$detail-side-padding: 60px;
-// Collapsed navbar inset: 16px of bar padding plus 20px of pill padding.
-$detail-side-padding-stacked: 36px;
-// Mobile navbar inset: 12px of bar padding plus 16px of pill padding.
-$detail-side-padding-mobile: 32px;
+// card and the brand mark above it share a left edge. The newest bar is full
+// bleed with no wrapper padding, so that inset is now just the bar's own 40px
+// padding. Holding the frame's 140px instead left the card 100px to the right of
+// the brand mark on the very width the frame was drawn at. The collapsed navbar
+// uses its own two insets, so those are named separately below and the card
+// follows the bar rather than the viewport.
+$detail-side-padding: 40px;
+// Collapsed navbar inset: the bar's tightened 20px padding, with no wrapper
+// padding above it.
+$detail-side-padding-stacked: 20px;
+// Mobile navbar inset: the bar's tightened 16px padding.
+$detail-side-padding-mobile: 16px;
 // Below this the filter column stops being a column and the detail page stops
 // being two columns. Both layouts collapse to one at the same point so the two
 // screens change shape together.
@@ -129,7 +129,7 @@ $breakpoint-catalog-mobile: 640px;
 
 // Height of the sticky NavBar (`.navbar`) on the catalog screens. The Explore
 // page pins its filter column directly below the bar, so the measured height
-// lives here instead of being guessed in two places. It comes from the 48px
-// brand mark plus the 20px bar padding plus the 20px navbar wrapper padding,
-// with the 40px wordmark's line box adding the final pixel.
-$catalog-navbar-height: 129px;
+// lives here instead of being guessed in two places. It comes from the 20px bar
+// padding top, the 48px content row, the 20px bar padding bottom and the 1px
+// border on each of those two edges.
+$catalog-navbar-height: 90px;

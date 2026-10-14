@@ -4,16 +4,18 @@
 // Filter column for the Explore page.
 //
 // The Figma frame reserves a 490px column on the left and leaves it as an empty
-// translucent panel. It now holds the category, price and sort controls. On
-// desktop it stays pinned below the sticky navbar and scrolls its own content;
-// once the layout drops to one column it collapses behind a toggle so the grid
-// gets the full width back.
+// panel painted the same #151515 as the page, so it reads as a plain dark column
+// rather than a raised surface. It now holds the category, price and sort
+// controls, which sit directly on the dark background. On desktop it stays
+// pinned below the sticky navbar and scrolls its own content; once the layout
+// drops to one column it collapses behind a toggle so the grid gets the full
+// width back.
 
 // The column is sticky and capped at the viewport height so a long category
 // list scrolls inside the panel instead of running past the fold, where a
 // pinned panel could never be scrolled to. It is capped rather than fixed so a
-// short filter list lets the panel hug its own content, which keeps the dark
-// panel from trailing a large empty tail under the last group.
+// short filter list lets the panel hug its own content, which keeps the column
+// from trailing a large empty tail under the last group.
 .explore__filter {
   position: sticky;
   top: calc(#{v.$catalog-navbar-height});
@@ -21,7 +23,7 @@
   flex: none;
   flex-direction: column;
   width: v.$catalog-filter-width;
-  height: calc(100svh - #{v.$catalog-navbar-height} - 40px);
+  height: calc(100svh - #{v.$catalog-navbar-height});
 }
 
 // The toggle only exists in the collapsed layout, so it is hidden by default.
@@ -31,17 +33,16 @@
   @include f.focus-ring-light;
 }
 
-// --- the panel -------------------------------------------------------------
-
+// The panel paints no surface of its own: the design's column is the same
+// colour as the page, so the controls sit directly on the backdrop. What is left
+// is the 10px inset the frame draws and the internal rhythm of the groups.
 .filter-panel {
   display: flex;
   flex-direction: column;
   gap: 28px;
   min-height: 0;
   height: 100%;
-  padding: 24px;
-  border-radius: v.$catalog-radius-bar;
-  background: v.$catalog-panel-bg;
+  padding: 10px;
   overflow-y: auto;
 }
 
@@ -77,9 +78,11 @@
   @include f.focus-ring-light;
 }
 
+// Secondary copy sits on the page's own #151515 now, not on a lightened panel,
+// so it uses the backdrop's muted tone, which resolves to about 5.3:1 there.
 .filter-panel__summary {
   margin: -16px 0 0;
-  color: v.$catalog-on-panel-muted;
+  color: v.$catalog-on-dark-muted;
   font-size: 14px;
   line-height: normal;
 }
@@ -111,14 +114,14 @@
 .filter-panel__empty,
 .filter-panel__hint {
   margin: 0;
-  color: v.$catalog-on-panel-muted;
+  color: v.$catalog-on-dark-muted;
   font-size: 14px;
   line-height: 1.4;
 }
 
 .filter-panel__error {
   margin: 0;
-  color: v.$catalog-on-panel-danger;
+  color: v.$auth-danger;
   font-size: 14px;
   line-height: 1.4;
 }
@@ -184,7 +187,7 @@
 }
 
 .filter-panel__price-label {
-  color: v.$catalog-on-panel-muted;
+  color: v.$catalog-on-dark-muted;
   font-size: 12px;
   line-height: normal;
 }
@@ -266,12 +269,28 @@
 // its place and the panel only appears once it is opened, so the grid can use
 // the full content width.
 @media (max-width: v.$breakpoint-catalog-stack) {
+  // In the stacked layout the filter column stops being a 490px sidebar and
+  // becomes a full width block above the grid. It takes the same 20px inset the
+  // items column uses, so the toggle and the expanded controls line up with the
+  // cards below them instead of hanging off the left edge of the page.
   .explore__filter {
     position: static;
     width: 100%;
     max-height: none;
+    padding: 20px;
   }
 
+  // The panel's 10px inset exists to match the design's desktop column. Here the
+  // column already carries the inset, so the panel drops its own to keep the
+  // controls on the same edge as the toggle above them.
+  .filter-panel {
+    padding: 0;
+  }
+
+  // The toggle replaces the panel in the stacked layout, so it takes the panel's
+  // place as the one control that sits directly on the page. It is drawn as a
+  // dark control with the same 1px hairline the navbar uses, rather than as a
+  // translucent white bar, so it reads as a button on the flat background.
   .filter-panel__toggle {
     display: flex;
     gap: 10px;
@@ -279,9 +298,9 @@
     justify-content: space-between;
     width: 100%;
     padding: 14px 20px;
-    border: 0;
+    border: 1px solid v.$catalog-nav-border;
     border-radius: v.$catalog-radius-control;
-    background: v.$catalog-panel-bg;
+    background: v.$catalog-nav-bg;
     color: v.$catalog-surface;
     font-family: inherit;
     font-size: 16px;
@@ -329,6 +348,12 @@
   .explore__filter {
     height: 100%;
     max-height: calc(100svh - #{v.$catalog-navbar-height} - 40px);
+  }
+}
+
+@media (max-width: v.$breakpoint-catalog-mobile) {
+  .explore__filter {
+    padding: 16px;
   }
 }
 
