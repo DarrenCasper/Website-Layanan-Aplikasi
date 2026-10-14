@@ -4,6 +4,8 @@
 #   - COOLIFY_FRONTEND_WEBHOOK_URL  : Coolify deploy webhook URL for the frontend resource
 #   - COOLIFY_BACKEND_WEBHOOK_URL   : Coolify deploy webhook URL for the backend resource
 #   - COOLIFY_API_TOKEN             : Coolify API token, sent as a Bearer token on every webhook call
+#   - CF_ACCESS_CLIENT_ID           : Cloudflare Access service-token client ID
+#   - CF_ACCESS_CLIENT_SECRET       : Cloudflare Access service-token client secret
 #
 # Each job independently decides whether to deploy:
 #   - On push to main: only runs if files under its own service directory changed.
@@ -56,6 +58,8 @@ jobs:
         run: |
           curl --fail-with-body --request GET \
             --header "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+            --header "CF-Access-Client-Id: ${{ secrets.CF_ACCESS_CLIENT_ID }}" \
+            --header "CF-Access-Client-Secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}" \
             "${{ secrets.COOLIFY_FRONTEND_WEBHOOK_URL }}"
 
   deploy-backend:
@@ -84,4 +88,6 @@ jobs:
         run: |
           curl --fail-with-body --request GET \
             --header "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+            --header "CF-Access-Client-Id: ${{ secrets.CF_ACCESS_CLIENT_ID }}" \
+            --header "CF-Access-Client-Secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}" \
             "${{ secrets.COOLIFY_BACKEND_WEBHOOK_URL }}"
