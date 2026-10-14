@@ -56,7 +56,7 @@ jobs:
       - name: Trigger Coolify deploy webhook (frontend)
         if: github.event_name == 'workflow_dispatch' || steps.filter.outputs.frontend == 'true'
         run: |
-          curl --fail-with-body --request GET \
+          curl --fail-with-body --request POST \
             --header "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
             --header "CF-Access-Client-Id: ${{ secrets.CF_ACCESS_CLIENT_ID }}" \
             --header "CF-Access-Client-Secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}" \
@@ -86,7 +86,7 @@ jobs:
       - name: Trigger Coolify deploy webhook (backend)
         if: github.event_name == 'workflow_dispatch' || steps.filter.outputs.backend == 'true'
         run: |
-          curl --fail-with-body --request GET \
+          curl --fail-with-body --request POST \
             --header "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
             --header "CF-Access-Client-Id: ${{ secrets.CF_ACCESS_CLIENT_ID }}" \
             --header "CF-Access-Client-Secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}" \
