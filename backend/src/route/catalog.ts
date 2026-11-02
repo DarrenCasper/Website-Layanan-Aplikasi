@@ -7,6 +7,8 @@ import { catalogSearchLimiter, catalogMutationLimiter } from "../middleware/rate
 
 const catalogRouter = Router()
 
+const MAX_PRICE = 2_147_483_647
+
 class InputError extends Error { }
 
 
@@ -72,6 +74,24 @@ function readSearchQuery(query: Request["query"]) {
   const merchantId = readQueryText(query.merchantId, "merchantId", 191)
 
   const rawTags = readQueryText(query.tags, "tags", 500)
+  const rawMinPrice = readQueryText(query.minPrice, "minPrice", 11) //could extend to higher digits if needed
+  const rawMaxPrice = readQueryText(query.maxPrice, "maxPrice", 11)
+
+  const minPrice = rawMinPrice ? Number(rawMinPrice) : null
+  const maxPrice = rawMaxPrice ? Number(rawMaxPrice) : null
+  
+  if ((minPrice !== null && (!Number.isInteger(minPrice) || minPrice < 0 || minPrice > MAX_PRICE))) {
+    throw new InputError("minPrice must be non-negative integers")
+  } // handler for minPrice and maxPrice being non-negative numbers and a number not other types
+
+  if((maxPrice !== null && (!Number.isInteger(maxPrice) || maxPrice < 0 || maxPrice > MAX_PRICE))) {
+    throw new InputError("maxPrice must be non-negative integers")
+  }
+
+  if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
+    throw new InputError("minPrice cannot be greater than maxPrice")
+  } // handler for minPrice being greater than maxPrice
+
   const tags = normalizeTags(
     rawTags.split(",").map((tag) => tag.trim()).filter(Boolean),
   )
@@ -87,7 +107,13 @@ function readSearchQuery(query: Request["query"]) {
     throw new InputError("limit must be an integer between 1 and 50")
   }
 
-  return { q, tags, merchantId, page, limit }
+  const sort = readQueryText(query.sort, "sort", 20) || "default"
+
+  if(sort !== "default" && sort !== "price_asc" && sort !== "price_desc") {
+    throw new InputError("sort must be default, price_asc or price_desc")
+  }
+
+  return { q, tags, merchantId, page, limit, minPrice, maxPrice, sort }
 }
 
 // Escape SQL LIKE special characters for literal substring searches.
@@ -249,12 +275,22 @@ function handleMutationError(
 }
 catalogRouter.get("/products", catalogSearchLimiter, async (req: Request, res: Response) => {
   try {
-    const { q, tags, merchantId, page, limit } = readSearchQuery(req.query)
+    const { q, tags, merchantId, page, limit, maxPrice, minPrice, sort } = readSearchQuery(req.query)
+
+    const priceCondition = minPrice !== null || maxPrice !== null ? {
+      ...(minPrice !== null ? {gte: minPrice} : {}),
+      ...(maxPrice  !== null ? {lte: maxPrice} : {}),
+    }:
+    undefined
 
     const where: Prisma.ProductWhereInput = {
       merchant: {
         status: "ACTIVE"
       }
+    }
+
+    if(priceCondition){
+      where.price = priceCondition
     }
 
     if (merchantId) {
@@ -289,11 +325,26 @@ catalogRouter.get("/products", catalogSearchLimiter, async (req: Request, res: R
       }
     }
 
+    let orderBy: Prisma.ProductOrderByWithRelationInput[] = [ {id: "asc"}]
+
+    if (sort === "price_asc"){
+      orderBy = [
+        {price: "asc"},
+        {id: "asc"}
+      ]
+    }
+    else if (sort === "price_desc") {
+      orderBy = [
+        {price: "desc"},
+        {id: "desc"}
+      ]
+    }
+
     const [data, total] = await prisma.$transaction([
       prisma.product.findMany({
         where,
         include: productInclude,
-        orderBy: { id: "asc" },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit
       }),
@@ -317,12 +368,22 @@ catalogRouter.get("/products", catalogSearchLimiter, async (req: Request, res: R
 
 catalogRouter.get("/services", catalogSearchLimiter, async (req: Request, res: Response) => {
   try {
-    const { q, tags, merchantId, page, limit } = readSearchQuery(req.query)
+    const { q, tags, merchantId, page, limit, maxPrice, minPrice, sort } = readSearchQuery(req.query)
+
+    const priceCondition = minPrice !== null || maxPrice !== null ? {
+      ...(minPrice !== null ? {gte: minPrice} : {}),
+      ...(maxPrice !== null ? {lte: maxPrice} : {})
+    } :
+    undefined
 
     const where: Prisma.ServiceWhereInput = {
       merchant: {
         status: "ACTIVE",
       },
+    }
+
+    if(priceCondition){
+      where.price = priceCondition
     }
 
     if (merchantId) {
@@ -358,11 +419,25 @@ catalogRouter.get("/services", catalogSearchLimiter, async (req: Request, res: R
       }
     }
 
+    let orderBy: Prisma.ServiceOrderByWithRelationInput[] = [{ id: "asc"}]
+
+    if (sort === "price_asc"){
+      orderBy = [
+        {price: "asc"},
+        {id: "asc"}
+      ]
+    }
+    else if (sort === "price_desc") {
+      orderBy = [
+        {price: "desc"},
+        {id: "desc"}
+      ]
+    }
     const [data, total] = await prisma.$transaction([
       prisma.service.findMany({
         where,
         include: serviceInclude,
-        orderBy: { id: "asc" },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit
       }),
