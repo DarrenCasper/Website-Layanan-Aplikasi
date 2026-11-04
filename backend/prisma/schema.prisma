@@ -15,55 +15,60 @@ datasource db {
 }
 
 model User {
-  id String @id // Sliced from email to get the value, so no default
-  email String @unique
-  passwordHashed String 
-  namaLengkap String
-  username String @unique
-  departemen String
-  fakultas String
-  isAdmin Boolean @default(false) //if you seed an admin from function that this wont trigger
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isVerified Boolean @default(false)
+  id             String   @id // Sliced from email to get the value, so no default
+  email          String   @unique
+  passwordHashed String
+  namaLengkap    String
+  username       String   @unique
+  departemen     String
+  fakultas       String
+  isAdmin        Boolean  @default(false) //if you seed an admin from function that this wont trigger
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  isVerified     Boolean  @default(false)
 
   membership MerchantMember[]
+
+  buyerConversations Conversation[] @relation("BuyerConversations")
+  sentMessages       Message[]      @relation("SentMessages")
 }
 
 model Merchant {
-  id String @id @default(cuid())
-  namaToko String
+  id        String         @id @default(cuid())
+  namaToko  String
   deskripsi String?
-  status MerchantStatus @default(PENDING)
-  createdAt DateTime @default(now())
+  status    MerchantStatus @default(PENDING)
+  createdAt DateTime       @default(now())
 
-  members MerchantMember[]
+  members  MerchantMember[]
   products Product[]
   services Service[]
+
+  conversations Conversation[] @relation("MerchantConversations")
 }
 
 model MerchantMember {
-  id String @id @default(cuid())
-  userId String
+  id         String       @id @default(cuid())
+  userId     String
   merchantId String
-  role MerchantRole @default(STAFF)
-  joinedAt DateTime @default(now())
+  role       MerchantRole @default(STAFF)
+  joinedAt   DateTime     @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
   merchant Merchant @relation(fields: [merchantId], references: [id])
 
   @@unique([userId, merchantId]) // make sure no same people from the same merchant have 2 different role
 }
 
 model Product {
-  id String @id @default(cuid())
-  merchantId String
-  name String
-  price Int @default(0)
-  stock Int @default(0)
+  id          String  @id @default(cuid())
+  merchantId  String
+  name        String
+  price       Int     @default(0)
+  stock       Int     @default(0)
   description String? @db.Text
 
-  merchant Merchant @relation(fields: [merchantId], references: [id])
+  merchant    Merchant     @relation(fields: [merchantId], references: [id])
   productTags ProductTag[]
 
   @@index([merchantId])
@@ -71,11 +76,11 @@ model Product {
 }
 
 model Service {
-  id String @id @default(cuid())
-  merchantId String
-  name String
-  price Int @default(0)
-  durationMin Int @default(0)
+  id          String       @id @default(cuid())
+  merchantId  String
+  name        String
+  price       Int          @default(0)
+  durationMin Int          @default(0)
   description String?
   serviceTags ServiceTag[]
 
@@ -112,7 +117,7 @@ model ServiceTag {
   @@id([serviceId, tagId])
 }
 
-enum MerchantRole { // can add more role here if needed (depends)
+enum MerchantRole {
   OWNER
   STAFF
 }
@@ -121,4 +126,37 @@ enum MerchantStatus {
   PENDING
   ACTIVE
   SUSPENDED
+}
+
+// continue with the chat function (needs conversation and message) where 1 conversation is between 2 user, and 1 conversatioon can have many message
+
+model Conversation {
+  id         String   @id @default(cuid())
+  buyerId    String
+  merchantId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  buyer    User     @relation("BuyerConversations", fields: [buyerId], references: [id])
+  merchant Merchant @relation("MerchantConversations", fields: [merchantId], references: [id])
+
+  messages Message[]
+
+  @@unique([buyerId, merchantId])
+  @@unique([buyerId, updatedAt, id])
+  @@unique([merchantId, updatedAt, id])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  body           String   @db.Text
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  sender User @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt, id])
 }

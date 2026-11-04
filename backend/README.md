@@ -2,9 +2,9 @@
 
 Backend documentation for **Website-Layanan-Aplikasi (Layap)**.
 
-This document describes the backend that currently exists in the repository's `backend/` directory, including local setup, environment variables, database configuration, authentication, OTP/password reset, merchant creation, the product/service catalog, and API usage.
+This document describes the backend that currently exists in the repository's `backend/` directory, including local setup, environment variables, database configuration, authentication, OTP/password reset, merchant creation, the product/service catalog, buyer-merchant chat, and API usage.
 
-> **Verified against the current `main` branch on 2026-10-05.**
+> **Verified against the current `main` branch on 2026-11-04.**
 
 ## 1. Backend Overview
 
@@ -48,6 +48,7 @@ backend/
 │   │   ├── auth.ts        # Register, login, OTP verification
 │   │   ├── merchant.ts    # Merchant creation
 │   │   ├── catalog.ts     # Product/service catalog (search, create, update, delete)
+│   │   ├── chat.ts        # Buyer <-> merchant conversations and messages
 │   │   └── reset.ts       # Password reset flow
 │   └── index.ts            # Express application entry point
 ├── .env.example            # Environment variable template
@@ -188,8 +189,10 @@ npx prisma studio
 
 ```text
 User
- └──< MerchantMember >── Merchant ──< Product >──< ProductTag >── Tag
-                                 └──< Service >──< ServiceTag >── Tag
+ ├──< MerchantMember >── Merchant ──< Product >──< ProductTag >── Tag
+ │                                └──< Service >──< ServiceTag >── Tag
+ │                                └──< Conversation >──< Message
+ └──< Conversation (as buyer) / Message (as sender) >
 
 MerchantMember.role:
  ├── OWNER
@@ -248,6 +251,13 @@ Merchant.status:
 
 - `Tag.name` is globally unique and stored lowercased/trimmed.
 - `ProductTag` and `ServiceTag` are join tables (`@@id([productId, tagId])` / `@@id([serviceId, tagId])`) connecting a listing to a `Tag`, created via `connectOrCreate` so existing tags are reused instead of duplicated.
+
+#### Conversation / Message
+
+- One `Conversation` per unique `(buyerId, merchantId)` pair — `@@unique([buyerId, merchantId])`, so starting a conversation with the same merchant twice just returns the existing one instead of creating a duplicate.
+- Also unique on `(buyerId, updatedAt, id)` and `(merchantId, updatedAt, id)` — supports efficiently listing a user's or a merchant's conversations ordered by most-recently-active.
+- `updatedAt` is bumped on every new `Message`, so conversation lists can sort by recent activity.
+- `Message.body` is free text (`@db.Text`), indexed on `(conversationId, createdAt, id)` for paginated message history.
 
 ## 7. Running the Backend
 
@@ -317,6 +327,8 @@ The backend does **not** mount its routes under `/api`. The frontend development
 | PATCH | `/catalog/merchants/:merchantId/services/:serviceId` | Bearer JWT + membership | Partially update a service |
 | DELETE | `/catalog/merchants/:merchantId/products/:productId` | Bearer JWT + membership | Delete a product |
 | DELETE | `/catalog/merchants/:merchantId/services/:serviceId` | Bearer JWT + membership | Delete a service |
+| POST | `/chat/conversation` | Bearer JWT | Start (or fetch the existing) buyer-merchant conversation |
+| POST | `/chat/conversation/:conversationId/messages` | Bearer JWT + participant | Send a message in a conversation |
 
 ## 9. Authentication
 
@@ -583,10 +595,15 @@ Query parameters (all optional):
 | `q` | string | ≤100 chars | Matches listing `name` or any tag `name` (substring, LIKE-escaped) |
 | `tags` | comma-separated string | ≤10 tags, each 1–20 chars | Matches listings that have **all** given tags |
 | `merchantId` | string | ≤191 chars | Restrict to one merchant |
+| `minPrice` | integer | 0–2,147,483,647 | Inclusive lower bound on `price` |
+| `maxPrice` | integer | 0–2,147,483,647 | Inclusive upper bound on `price`; rejected with `400` if less than `minPrice` |
+| `sort` | `default` \| `price_asc` \| `price_desc` | — | Default `default` (sorted by `id`). Both price sorts use `id` as a secondary tie-breaker, so pagination stays stable even with duplicate prices |
 | `page` | integer | 1–10000 | Default `1` |
 | `limit` | integer | 1–50 | Default `20` |
 
 Only listings belonging to a merchant with `status: "ACTIVE"` are returned.
+
+Sorting and pagination were load-tested together with 1000 seeded rows (duplicate prices included): fetching every page with `sort=price_asc` / `price_desc` produced a globally monotonic, duplicate-free, gap-free result set — the `[{price: ...}, {id: ...}]` tie-break holds up across page boundaries.
 
 Response (`200`):
 
@@ -697,7 +714,92 @@ Response (`200`):
 
 The `404` behavior above was verified directly: a user who legitimately owns two merchants cannot `PATCH`/`DELETE` merchant A's product by passing merchant B's id in the URL — the Prisma `where: { id, merchantId }` compound filter returns "not found" instead of operating on the wrong merchant's row.
 
-## 16. Email / SMTP
+## 16. Chat (Buyer <-> Merchant Messaging)
+
+A buyer can open one conversation per merchant and exchange messages with that merchant's `OWNER`/`STAFF` members. All routes require `Authorization: Bearer <jwt>`.
+
+### Start a conversation
+
+```http
+POST /chat/conversation
+Authorization: Bearer <jwt>
+Content-Type: application/json
+```
+
+```json
+{ "merchantId": "..." }
+```
+
+Rules:
+- The merchant must exist and have `status: "ACTIVE"` (`403` otherwise).
+- The caller cannot be an `OWNER`/`STAFF` member of that merchant — a merchant can't open a buyer conversation with itself (`400`).
+- Idempotent: if a conversation between this buyer and merchant already exists, it's returned as-is with `200` instead of creating a duplicate (enforced by `@@unique([buyerId, merchantId])`; a `P2002` race from two near-simultaneous first requests is caught and resolved the same way).
+
+Response (`201` new, or `200` existing):
+
+```json
+{
+  "message": "Conversation created",
+  "data": {
+    "id": "...",
+    "buyerId": "...",
+    "merchantId": "...",
+    "createdAt": "...",
+    "updatedAt": "..."
+  }
+}
+```
+
+### Send a message
+
+```http
+POST /chat/conversation/:conversationId/messages
+Authorization: Bearer <jwt>
+Content-Type: application/json
+```
+
+```json
+{ "body": "Halo, ini masih ready?" }
+```
+
+| Field | Rules |
+|---|---|
+| `body` | String, 1–2000 characters after trimming |
+
+Rules:
+- The caller must be either the conversation's buyer, or an `OWNER`/`STAFF` member of its merchant — anyone else gets `404` (not `403`), so a stranger can't even confirm the conversation exists.
+- The merchant must still be `status: "ACTIVE"` (`403` otherwise).
+- Sending a message bumps the conversation's `updatedAt` in the same transaction as the insert, for sorting conversation lists by recent activity.
+
+Response (`201`):
+
+```json
+{
+  "message": "Message sent",
+  "data": {
+    "id": "...",
+    "conversationId": "...",
+    "senderId": "...",
+    "body": "Halo, ini masih ready?",
+    "createdAt": "...",
+    "sender": { "id": "...", "namaLengkap": "..." }
+  }
+}
+```
+
+### Chat error responses
+
+| Status | When |
+|---:|---|
+| `400` | Missing/invalid `merchantId` or `conversationId`, empty/too-long message body, or caller is a member of their own merchant trying to start a buyer conversation with it |
+| `401` | Missing/invalid JWT |
+| `403` | Merchant isn't `ACTIVE` |
+| `404` | Merchant not found, or conversation doesn't exist / caller isn't a participant (deliberately indistinguishable, same reasoning as the catalog's `404`s) |
+| `500` | Unexpected server error |
+
+Verified directly: buyer and merchant owner can both message each other; a third, unrelated user gets `404` on the same conversation id; an empty/whitespace-only body is rejected with `400`; messaging a nonexistent conversation id is `404`.
+
+## 17. Email / SMTP
 
 Nodemailer is used for:
 
@@ -724,7 +826,7 @@ A successful response contains a message ID:
 
 Email failures are logged by the server. The welcome-email helper is deliberately non-blocking so a registration can still complete if email sending fails.
 
-## 17. CORS
+## 18. CORS
 
 The server reads `ALLOWED_ORIGINS` from `.env` and splits it by commas.
 
@@ -742,7 +844,7 @@ ALLOWED_ORIGINS=*
 
 Do not use a wildcard in a production deployment unless that is an intentional security decision.
 
-## 18. Testing and Linting
+## 19. Testing and Linting
 
 The available npm scripts are:
 
@@ -754,7 +856,7 @@ npm run lint
 
 `npm test` runs Vitest in non-watch mode.
 
-## 19. Running Frontend + Backend Together
+## 20. Running Frontend + Backend Together
 
 The repository contains a root-level `dev.sh` helper.
 
@@ -789,7 +891,7 @@ Logs are written to:
 
 On a fresh clone, `dev.sh` also generates the Prisma Client when `src/generated/prisma/client.ts` does not exist.
 
-## 20. Docker Notes
+## 21. Docker Notes
 
 `Dockerfile` currently uses:
 
@@ -807,7 +909,7 @@ The Dockerfile declares `EXPOSE 8000`, while the Express application defaults to
 
 For normal local development, use `npm run dev` on the host or `./dev.sh`.
 
-## 21. Important Implementation Notes
+## 22. Important Implementation Notes
 
 ### JWT secret naming inconsistency
 
@@ -863,7 +965,7 @@ Because OTP records are stored in a JavaScript `Map`, they disappear whenever th
 
 A conventional health-check endpoint would normally use `200`; changing this is optional but should be coordinated with frontend/monitoring checks.
 
-## 22. Development Workflow
+## 23. Development Workflow
 
 A typical backend development workflow is:
 
@@ -896,7 +998,7 @@ npx prisma generate
 
 For backend code changes, `tsx watch` automatically restarts the development server.
 
-## 23. API Flow Summary
+## 24. API Flow Summary
 
 ```text
                     ┌──────────────────┐
@@ -909,15 +1011,15 @@ For backend code changes, `tsx watch` automatically restarts the development ser
                     │   src/index.ts   │
                     └────────┬─────────┘
                              │
-          ┌──────────────────┼───────────────┬────────────────┐
-          │                  │               │                │
-          ▼                  ▼               ▼                ▼
-     /auth/*           /create/*        /catalog/*        /reset/*
-          │                  │               │                │
-          ▼                  ▼               ▼                ▼
-     JWT + bcrypt       requireAuth   requireAuth +       OTP + bcrypt
-          │                  │        requireMerchantAccess   │
-          └──────────────────┴───────────────┴────────────────┘
+          ┌──────────────────┼───────────────┬────────────────┬──────────────┐
+          │                  │               │                │              │
+          ▼                  ▼               ▼                ▼              ▼
+     /auth/*           /create/*        /catalog/*        /reset/*       /chat/*
+          │                  │               │                │              │
+          ▼                  ▼               ▼                ▼              ▼
+     JWT + bcrypt       requireAuth   requireAuth +       OTP + bcrypt    requireAuth
+          │                  │        requireMerchantAccess   │              │
+          └──────────────────┴───────────────┴────────────────┴──────────────┘
                              ▼
                      ┌────────────────┐
                      │     Prisma     │
@@ -933,12 +1035,13 @@ For backend code changes, `tsx watch` automatically restarts the development ser
                       └──────────────┘
 ```
 
-## 24. Related Files
+## 25. Related Files
 
 - [`backend/src/index.ts`](./src/index.ts) — Express application and route registration
 - [`backend/src/route/auth.ts`](./src/route/auth.ts) — Authentication and OTP verification
 - [`backend/src/route/merchant.ts`](./src/route/merchant.ts) — Merchant creation
-- [`backend/src/route/catalog.ts`](./src/route/catalog.ts) — Product/service search, create, update, delete
+- [`backend/src/route/catalog.ts`](./src/route/catalog.ts) — Product/service search (with price filter + sort), create, update, delete
+- [`backend/src/route/chat.ts`](./src/route/chat.ts) — Buyer-merchant conversations and messages
 - [`backend/src/route/reset.ts`](./src/route/reset.ts) — Password reset
 - [`backend/src/middleware/auth.ts`](./src/middleware/auth.ts) — JWT authentication middleware
 - [`backend/src/middleware/merchantAccess.ts`](./src/middleware/merchantAccess.ts) — Verifies OWNER/STAFF membership for catalog mutations

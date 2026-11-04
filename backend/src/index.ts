@@ -10,6 +10,7 @@ import authRouter from './route/auth.ts'
 import merchantRouter from './route/merchant.ts'
 import resetRouter from "./route/reset.ts"
 import catalogRouter from "./route/catalog.ts"
+import chatRouter from "./route/chat.ts"
 import cors from "cors"
 
 const PORT = Number(process.env.PORT) || 4000
@@ -81,7 +82,7 @@ app.use("/auth", authRouter)
 app.use("/create", merchantRouter)
 app.use("/reset", resetRouter)
 app.use("/catalog", catalogRouter)
-
+app.use("/chat", chatRouter)
 // 404 page handler
 app.use((_req: Request, res: Response, _next:NextFunction) => {
     res.status(404).json({
@@ -99,3 +100,4 @@ app.listen(PORT, () => {
 app.get("/", (req, res) => {
   res.json({ message: "API is running..." });
 });
+ 
