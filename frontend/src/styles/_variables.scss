@@ -133,3 +133,51 @@ $breakpoint-catalog-mobile: 640px;
 // padding top, the 48px content row, the 20px bar padding bottom and the 1px
 // border on each of those two edges.
 $catalog-navbar-height: 90px;
+
+// --- Sprint 2026-11 screens -------------------------------------------------
+// Tokens shared by the redesigned filter panel (#34), the storefront (#38), the
+// chat popup (#40) and the merchant dashboard (#37). The Figma frames for those
+// pages draw white cards on the #151515 page, so these name the alpha steps of
+// #151515 that the cards use for secondary copy, hairlines and fills.
+$ui-ink: #151515;
+$ui-ink-85: rgba(21, 21, 21, 0.85);
+$ui-ink-75: rgba(21, 21, 21, 0.75);
+$ui-ink-70: rgba(21, 21, 21, 0.7);
+$ui-ink-65: rgba(21, 21, 21, 0.65);
+$ui-ink-60: rgba(21, 21, 21, 0.6);
+$ui-ink-55: rgba(21, 21, 21, 0.55);
+$ui-ink-50: rgba(21, 21, 21, 0.5);
+$ui-ink-40: rgba(21, 21, 21, 0.4);
+$ui-ink-30: rgba(21, 21, 21, 0.3);
+$ui-border: rgba(21, 21, 21, 0.18);
+$ui-border-soft: rgba(21, 21, 21, 0.15);
+$ui-hairline: rgba(21, 21, 21, 0.08);
+$ui-fill: rgba(21, 21, 21, 0.06);
+$ui-fill-badge: rgba(21, 21, 21, 0.07);
+$ui-fill-row: rgba(21, 21, 21, 0.04);
+$ui-bubble-in: #f1f1f2;
+$ui-danger: #d93636;
+$ui-danger-fill: rgba(217, 54, 54, 0.1);
+$ui-on-dark-chip: #2d2d2d;
+$ui-on-dark-55: rgba(255, 255, 255, 0.55);
+$ui-on-dark-60: rgba(255, 255, 255, 0.6);
+$ui-on-dark-65: rgba(255, 255, 255, 0.65);
+$ui-on-dark-line: rgba(255, 255, 255, 0.12);
+$ui-radius-control: 8px;
+$ui-radius-card: 10px;
+$ui-radius-header: 12px;
+$ui-radius-modal: 14px;
+$ui-radius-popup: 16px;
+$ui-shadow-raised: 0 8px 12px rgba(0, 0, 0, 0.08);
+$ui-shadow-popup: 0 8px 24px rgba(0, 0, 0, 0.35);
+$ui-shadow-modal: 0 8px 12px rgba(0, 0, 0, 0.3);
+// The redesigned catalog screens centre a 1232px content column in the 1440
+// frame (104px gutters), with a 320px filter card and a 32px gap beside it.
+$ui-content-width: 1232px;
+$ui-filter-width: 320px;
+$ui-column-gap: 32px;
+// Below this the filter card becomes a sheet opened from a toggle.
+$breakpoint-filter-sheet: 1024px;
+// The Figma mobile frames are 390px wide; at or below this the chat popup and
+// the filter sheet go full screen.
+$breakpoint-phone: 480px;

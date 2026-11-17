@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import NavBar from '../components/NavBar'
+import { useChat } from '../context/chatContext'
+import { useAuth } from '../context/authContext'
+import { fetchPublicMerchant, initialsOf, type MerchantProfile } from '../lib/merchants'
+import chatIcon from '../assets/icons/chat-white.svg'
 import { SkeletonDetail, SkeletonStatus } from '../components/CatalogSkeleton'
-import { formatRupiah, loadCatalogProducts, type CatalogProduct } from '../lib/catalog'
+import { formatRupiah, loadCatalogItem, type CatalogProduct } from '../lib/catalog'
 import { CATALOG_TITLE, productTitle, useDocumentTitle } from '../lib/useDocumentTitle'
 import minusIcon from '../assets/catalog/icon-minus.svg'
 import plusIcon from '../assets/catalog/icon-plus.svg'
@@ -25,13 +29,15 @@ function ProductDetailPage() {
   const [pickupDate, setPickupDate] = useState('')
   const [isAdded, setIsAdded] = useState(false)
   const confirmationTimer = useRef<number | null>(null)
+  const [store, setStore] = useState<MerchantProfile | null>(null)
+  const { openMerchantChat } = useChat()
+  const { user } = useAuth()
 
   useEffect(() => {
     let isActive = true
 
     const load = async () => {
-      const { products } = await loadCatalogProducts()
-      const found = products.find((entry) => entry.id === id) ?? null
+      const found = id ? await loadCatalogItem(id) : null
 
       if (!isActive) {
         return
@@ -58,6 +64,26 @@ function ProductDetailPage() {
       isActive = false
     }
   }, [id, navigate])
+
+  // The seller block links to the store and shows its catalog size (#38).
+  const merchantId = product?.merchantId ?? null
+
+  useEffect(() => {
+    if (!merchantId) {
+      return
+    }
+
+    const controller = new AbortController()
+
+    fetchPublicMerchant(merchantId, controller.signal).then(
+      (profile) => setStore(profile),
+      () => {
+        // The block still links to the store by name without the counts.
+      },
+    )
+
+    return () => controller.abort()
+  }, [merchantId])
 
   // The confirmation label reverts on its own, so the timer has to be cleared
   // if the page unmounts first.
@@ -108,15 +134,13 @@ function ProductDetailPage() {
   const subtitle = selectedVariant ? `Varian ${selectedVariant}` : product.merchantName
   const mainImage = thumbnails[imageIndex] ?? product.image
 
-  // The design draws the merchant avatar as a plain grey circle, which reads as
-  // an image that never loaded. Two initials from the shop name make it look
-  // like an avatar instead, and it is derived from the name so it is stable.
-  const merchantInitials = product.merchantName
-    .split(/\s+/)
-    .filter((word) => word !== '')
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? '')
-    .join('')
+  const storeCounts =
+    store && store.id === product.merchantId
+      ? `${store.productCount} produk · ${store.serviceCount} jasa`
+      : product.merchantCity
+  const isOwnStore = Boolean(
+    store && store.id === product.merchantId && store.members.some((m) => m.userId === user?.id),
+  )
 
   // Stock zero still leaves one unit selectable, but the plus button is inert.
   const maxQuantity = product.stock > 0 ? product.stock : 1
@@ -257,15 +281,44 @@ function ProductDetailPage() {
               </div>
             </div>
 
+            {/* Seller block (Figma #38 97:9808): the store name and the
+                "Kunjungi toko" button lead to /merchant/:merchantId, and
+                "Chat penjual" opens the chat popup on that store (#40). */}
             <div className="detail__merchant">
               <span className="detail__merchant-avatar" aria-hidden="true">
-                {merchantInitials}
+                {initialsOf(product.merchantName)}
               </span>
 
               <div className="detail__merchant-text">
-                <p className="detail__merchant-name">{product.merchantName}</p>
-                <p className="detail__merchant-city">{product.merchantCity}</p>
+                {product.merchantId ? (
+                  <Link className="detail__merchant-name" to={`/merchant/${product.merchantId}`}>
+                    {product.merchantName}
+                  </Link>
+                ) : (
+                  <p className="detail__merchant-name">{product.merchantName}</p>
+                )}
+                <p className="detail__merchant-city">{storeCounts}</p>
               </div>
+
+              {product.merchantId ? (
+                <div className="detail__merchant-actions">
+                  <Link className="detail__merchant-visit" to={`/merchant/${product.merchantId}`}>
+                    Kunjungi toko
+                  </Link>
+                  {isOwnStore ? null : (
+                    <button
+                      className="detail__merchant-chat"
+                      type="button"
+                      onClick={() =>
+                        openMerchantChat(product.merchantId ?? '', product.merchantName)
+                      }
+                    >
+                      <img src={chatIcon} alt="" width={18} height={18} />
+                      Chat penjual
+                    </button>
+                  )}
+                </div>
+              ) : null}
             </div>
           </article>
 

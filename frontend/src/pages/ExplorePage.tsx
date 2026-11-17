@@ -1,205 +1,235 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import NavBar from '../components/NavBar'
-import ProductCard from '../components/ProductCard'
 import FilterPanel from '../components/FilterPanel'
-import { SkeletonCards, SkeletonStatus } from '../components/CatalogSkeleton'
-import {
-  DEPARTMENT_SECTION,
-  FTEIC_SECTION,
-  loadCatalogProducts,
-  type CatalogProduct,
-  type CatalogSource,
-} from '../lib/catalog'
+import CatalogResults from '../components/CatalogResults'
+import { findCategory } from '../lib/categories'
 import {
   DEFAULT_FILTERS,
-  applyFilters,
-  countActiveFilters,
+  DEFAULT_QUERY,
+  formatPriceRange,
+  queryFromSearchParams,
+  queryToSearchParams,
   type CatalogFilters,
+  type CatalogQuery,
 } from '../lib/catalogFilters'
+import { useCatalogPage, useDebouncedValue } from '../lib/useCatalogPage'
+import { useCategories } from '../lib/useCategories'
 import { CATALOG_TITLE, useDocumentTitle } from '../lib/useDocumentTitle'
+import chipCloseIcon from '../assets/icons/x-small.svg'
 import './ExplorePage.scss'
 
-// Explore Page (Figma 25:2). The signed-in landing screen: a sticky bar, the
-// filter column the design reserves on the left, and the two product sections
-// stacked in one column to its right. Cards come from the API when it has
-// listings and from the curated mock catalog otherwise, so the page always
-// matches the design.
-function ExplorePage() {
-  const navigate = useNavigate()
+// The search box waits this long after the last keystroke before searching,
+// so typing a 10 character query sends at most a couple of requests.
+const SEARCH_DEBOUNCE_MS = 300
 
+// Explore page (Figma #34 97:5577). Search text, category, price, sort, the
+// product/service toggle and the page all live in the URL and are sent to
+// GET /catalog/products or /catalog/services; nothing is filtered locally.
+function ExplorePage() {
   useDocumentTitle(CATALOG_TITLE)
 
-  const [products, setProducts] = useState<CatalogProduct[]>([])
-  const [source, setSource] = useState<CatalogSource>('mock')
-  const [isLoading, setIsLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState<CatalogFilters>(DEFAULT_FILTERS)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const query = useMemo(() => queryFromSearchParams(searchParams), [searchParams])
+  const categories = useCategories()
+  const location = useLocation()
+  const routerNavigate = useNavigate()
+
+  // A one-off message from another page, e.g. a dashboard the user has no
+  // access to. It is read once and dropped from history so a refresh does not
+  // show it again.
+  const [toast, setToast] = useState<string | null>(() => {
+    const value = (location.state as { toast?: unknown } | null)?.toast
+    return typeof value === 'string' ? value : null
+  })
 
   useEffect(() => {
-    let isActive = true
-
-    const load = async () => {
-      const result = await loadCatalogProducts()
-
-      if (!isActive) {
-        return
-      }
-
-      setProducts(result.products)
-      setSource(result.source)
-      setIsLoading(false)
+    if ((location.state as { toast?: unknown } | null)?.toast) {
+      routerNavigate(`${location.pathname}${location.search}`, { replace: true, state: null })
     }
+  }, [location, routerNavigate])
 
-    void load()
+  useEffect(() => {
+    if (!toast) return
+    const timer = window.setTimeout(() => setToast(null), 5000)
+    return () => window.clearTimeout(timer)
+  }, [toast])
 
-    return () => {
-      isActive = false
-    }
-  }, [])
+  // The navbar field is edited locally and debounced into the URL. When the URL
+  // changes on its own (back button, a chip, Reset) the field follows it.
+  const [searchInput, setSearchInput] = useState(query.q)
+  const [syncedQ, setSyncedQ] = useState(query.q)
 
-  const query = search.trim().toLowerCase()
-
-  // Search runs first because it is driven from the navbar, then the panel's
-  // filters and sort narrow and order whatever survived it. Keeping the two
-  // stages separate is what lets the panel describe its own active count
-  // without having to know about the search box.
-  const matches = useMemo(() => {
-    const searched =
-      query === ''
-        ? products
-        : products.filter(
-            (product) =>
-              product.name.toLowerCase().includes(query) ||
-              product.tags.some((tag) => tag.toLowerCase().includes(query)),
-          )
-
-    return applyFilters(searched, filters)
-  }, [products, query, filters])
-
-  const departmentProducts = matches.filter((product) => product.section !== FTEIC_SECTION)
-  const fteicProducts = matches.filter((product) => product.section === FTEIC_SECTION)
-
-  // The first heading is the design's department label, but live API data
-  // carries its own group name, so the loaded section wins when there is one.
-  const departmentHeading =
-    products.find((product) => product.section !== FTEIC_SECTION)?.section ?? DEPARTMENT_SECTION
-
-  // The mock catalog always carries an FTEIC section, so the heading is held
-  // during loading and only dropped if the loaded list genuinely lacks one.
-  const hasFteicSection = isLoading || products.some((product) => product.section === FTEIC_SECTION)
-
-  const openProduct = useCallback(
-    (id: string) => {
-      navigate(`/product/${id}`)
-    },
-    [navigate],
-  )
-
-  const showNotice = !isLoading && source === 'mock' && products.length === 0
-
-  const activeFilterCount = countActiveFilters(filters)
-  const hasSearch = query !== ''
-
-  // A section is only rendered when it has cards, so a heading never appears
-  // above an empty grid.
-  const hasDepartmentSection = isLoading || departmentProducts.length > 0
-  const showFteicSection = hasFteicSection && (isLoading || fteicProducts.length > 0)
-
-  // Nothing matched. The grid area says so and offers a way back rather than
-  // leaving the page blank under two orphaned headings.
-  const showEmptyState = !isLoading && matches.length === 0
-
-  const clearEverything = () => {
-    setFilters(DEFAULT_FILTERS)
-    setSearch('')
+  if (syncedQ !== query.q) {
+    setSyncedQ(query.q)
+    setSearchInput(query.q)
   }
 
-  const resetFilters = () => {
-    setFilters(DEFAULT_FILTERS)
+  const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS)
+
+  const navigateTo = useCallback(
+    (next: CatalogQuery, replace = false) => {
+      setSearchParams(queryToSearchParams(next), { replace })
+    },
+    [setSearchParams],
+  )
+
+  useEffect(() => {
+    const trimmed = debouncedSearch.trim()
+
+    if (trimmed !== query.q.trim()) {
+      // Typing refines one search, so it replaces the entry instead of filling
+      // the history with every intermediate word.
+      navigateTo({ ...query, q: trimmed, page: 1 }, true)
+    }
+    // Only a settled keystroke should navigate; `query` changing must not.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch])
+
+  const { state, retry } = useCatalogPage({ ...query })
+
+  const filters: CatalogFilters = {
+    type: query.type,
+    category: query.category,
+    minPrice: query.minPrice,
+    maxPrice: query.maxPrice,
+    sort: query.sort,
+  }
+
+  const handleFiltersChange = useCallback(
+    (next: CatalogFilters) => navigateTo({ ...query, ...next, page: 1 }),
+    [navigateTo, query],
+  )
+
+  const handleReset = useCallback(
+    () => navigateTo({ ...query, ...DEFAULT_FILTERS, type: query.type, page: 1 }),
+    [navigateTo, query],
+  )
+
+  const clearEverything = () => {
+    setSearchInput('')
+    navigateTo({ ...DEFAULT_QUERY, type: query.type })
+  }
+
+  const handlePageChange = (page: number) => {
+    navigateTo({ ...query, page })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const page = state.page
+  const total = page?.pagination.total ?? null
+  const noun = query.type === 'service' ? 'jasa' : 'barang'
+  const category = findCategory(categories, query.category)
+
+  const priceBounds = useMemo(() => {
+    if (!page || page.items.length === 0) {
+      return null
+    }
+
+    const prices = page.items.map((item) => item.price)
+
+    return { min: Math.min(...prices), max: Math.max(...prices) }
+  }, [page])
+
+  const heading = query.q
+    ? `Hasil untuk “${query.q}”`
+    : (category?.name ?? (query.type === 'service' ? 'Semua jasa' : 'Semua produk'))
+
+  const chips: { key: string; label: string; onRemove: () => void }[] = []
+
+  if (query.q) {
+    chips.push({
+      key: 'q',
+      label: `“${query.q}”`,
+      onRemove: () => navigateTo({ ...query, q: '', page: 1 }),
+    })
+  }
+
+  if (category) {
+    chips.push({
+      key: 'category',
+      label: category.name,
+      onRemove: () => navigateTo({ ...query, category: null, page: 1 }),
+    })
+  }
+
+  if (query.minPrice !== null || query.maxPrice !== null) {
+    chips.push({
+      key: 'price',
+      label: formatPriceRange(query.minPrice, query.maxPrice),
+      onRemove: () => navigateTo({ ...query, minPrice: null, maxPrice: null, page: 1 }),
+    })
   }
 
   return (
     <main className="explore">
-      <NavBar searchValue={search} onSearchChange={setSearch} />
+      <NavBar
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        onSearchSubmit={() => navigateTo({ ...query, q: searchInput.trim(), page: 1 }, true)}
+      />
 
-      {/* The design shows no page title, but a screen reader needs one heading to
-          anchor the two section headings below, so it is present and hidden. */}
-      <h1 className="explore__visually-hidden">Katalog barang Temu</h1>
-
-      {isLoading ? <SkeletonStatus label="Memuat katalog barang" /> : null}
+      {toast ? (
+        <div className="explore__toast" role="status">
+          <span>{toast}</span>
+          <button type="button" aria-label="Tutup pesan" onClick={() => setToast(null)}>
+            ×
+          </button>
+        </div>
+      ) : null}
 
       <div className="explore__content">
         <FilterPanel
-          products={products}
+          categories={categories}
           filters={filters}
-          onChange={setFilters}
-          onReset={resetFilters}
+          onChange={handleFiltersChange}
+          onReset={handleReset}
+          priceBounds={priceBounds}
+          resultCount={total}
+          resultNoun={noun}
         />
 
-        <div className="explore__items">
-          {showEmptyState ? (
-            <div className="explore__empty" role="status">
-              <p className="explore__empty-title">Tidak ada barang yang cocok</p>
+        <section className="explore__results" aria-labelledby="explore-heading">
+          <div className="explore__head">
+            <div className="explore__head-row">
+              <h1 className="explore__heading" id="explore-heading">
+                {heading}
+              </h1>
 
-              <p className="explore__empty-text">
-                {hasSearch && activeFilterCount > 0
-                  ? 'Coba ubah kata kunci pencarian atau kurangi filter yang dipilih.'
-                  : hasSearch
-                    ? 'Coba kata kunci lain atau periksa ejaannya.'
-                    : 'Coba lebarkan rentang harga atau kurangi filter yang dipilih.'}
-              </p>
-
-              <button className="explore__empty-action" type="button" onClick={clearEverything}>
-                {hasSearch ? 'Hapus pencarian dan filter' : 'Reset filter'}
-              </button>
+              {total !== null ? (
+                <p className="explore__count" aria-live="polite">
+                  {total.toLocaleString('id-ID')} {noun}
+                </p>
+              ) : null}
             </div>
-          ) : (
-            <>
-              {hasDepartmentSection ? (
-                <div className="explore__section">
-                  <h2 className="explore__heading">{departmentHeading}</h2>
 
-                  {isLoading ? (
-                    <div className="explore__grid" aria-busy="true">
-                      <SkeletonCards />
-                    </div>
-                  ) : (
-                    <div className="explore__grid">
-                      {departmentProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} onClick={openProduct} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : null}
+            {chips.length > 0 ? (
+              <ul className="explore__chips" aria-label="Filter aktif">
+                {chips.map((chip) => (
+                  <li key={chip.key}>
+                    <button
+                      className="explore__chip"
+                      type="button"
+                      aria-label={`Hapus filter ${chip.label}`}
+                      onClick={chip.onRemove}
+                    >
+                      <span>{chip.label}</span>
+                      <img src={chipCloseIcon} alt="" width={14} height={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
 
-              {showFteicSection ? (
-                <div className="explore__section">
-                  <h2 className="explore__heading">{FTEIC_SECTION}</h2>
-
-                  {isLoading ? (
-                    <div className="explore__grid" aria-busy="true">
-                      <SkeletonCards />
-                    </div>
-                  ) : (
-                    <div className="explore__grid">
-                      {fteicProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} onClick={openProduct} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : null}
-            </>
-          )}
-
-          {showNotice ? (
-            <p className="explore__notice">
-              Katalog contoh ditampilkan karena belum ada barang dari penjual.
-            </p>
-          ) : null}
-        </div>
+          <CatalogResults
+            state={state}
+            onRetry={retry}
+            onPageChange={handlePageChange}
+            onClearAll={clearEverything}
+            emptyTitle={`Tidak ada ${noun} yang cocok`}
+          />
+        </section>
       </div>
     </main>
   )

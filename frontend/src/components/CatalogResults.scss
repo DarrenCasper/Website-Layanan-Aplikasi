@@ -1,0 +1,106 @@
+@use '../styles/variables' as v;
+@use '../styles/focus' as f;
+
+// Four 220px columns at the 880px results width the frames draw, flush cards on
+// one rounded white card.
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  border-radius: v.$ui-radius-card;
+  background: v.$catalog-surface;
+  overflow: hidden;
+  transition: opacity 120ms ease;
+
+  &--stale {
+    opacity: 0.55;
+  }
+}
+
+@media (max-width: v.$breakpoint-phone) {
+  .results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.results-banner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: v.$ui-radius-control;
+  background: v.$ui-danger-fill;
+  color: #ffb3b3;
+  font-size: 13px;
+
+  button {
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 6px;
+    background: v.$catalog-surface;
+    color: v.$ui-ink;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+
+    @include f.focus-ring-light;
+  }
+}
+
+.results-state {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  padding: 56px 24px;
+  border-radius: v.$ui-radius-card;
+  background: v.$catalog-surface;
+  color: v.$ui-ink;
+  text-align: center;
+}
+
+.results-state__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: v.$ui-fill;
+
+  &--danger {
+    background: v.$ui-danger-fill;
+  }
+}
+
+.results-state__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.results-state__text {
+  max-width: 340px;
+  margin: 0;
+  color: v.$ui-ink-65;
+  font-size: 14px;
+  line-height: 21px;
+}
+
+.results-state__action {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: v.$ui-radius-control;
+  background: v.$ui-ink;
+  color: v.$catalog-surface;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  @include f.focus-ring-card;
+}

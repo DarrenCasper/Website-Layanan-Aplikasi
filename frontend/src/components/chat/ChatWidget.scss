@@ -1,0 +1,519 @@
+@use '../../styles/variables' as v;
+@use '../../styles/focus' as f;
+
+// Chat launcher and popup (Figma #40). Desktop: a 380x560 white popup 16px
+// above a pill launcher in the bottom-right corner. Phone: the popup fills the
+// screen and the launcher hides behind it.
+
+.chat {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-end;
+  color: v.$ui-ink;
+  font-family: v.$font-auth;
+}
+
+// --- launcher --------------------------------------------------------------
+
+.chat-launcher {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  height: 48px;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: v.$catalog-surface;
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.35);
+  color: v.$ui-ink;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+
+  @include f.focus-ring-light;
+
+  img {
+    display: block;
+  }
+}
+
+// --- popup shell -----------------------------------------------------------
+
+.chat-popup {
+  display: flex;
+  flex-direction: column;
+  width: 380px;
+  height: min(560px, calc(100svh - 120px));
+  border-radius: v.$ui-radius-popup;
+  background: v.$catalog-surface;
+  box-shadow: v.$ui-shadow-popup;
+  overflow: hidden;
+}
+
+.chat-head {
+  display: flex;
+  flex: none;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid v.$ui-hairline;
+}
+
+.chat-head__text {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chat-head__title {
+  margin: 0;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-head__subtitle {
+  margin: 0;
+  overflow: hidden;
+  color: v.$ui-ink-60;
+  font-size: 12px;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-icon-button {
+  display: flex;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+
+  @include f.focus-ring-card;
+}
+
+.chat-avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: v.$ui-hairline;
+  color: v.$ui-ink;
+  font-size: 14px;
+  font-weight: 700;
+
+  &--dark {
+    background: v.$ui-ink;
+    color: v.$catalog-surface;
+  }
+
+  &--sm {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
+  }
+}
+
+// --- inbox -----------------------------------------------------------------
+
+.chat-tabs {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  padding: 12px 16px 4px;
+}
+
+.chat-tab {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: v.$ui-fill;
+  color: v.$ui-ink-70;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+
+  @include f.focus-ring-card;
+
+  &--on {
+    background: v.$ui-ink;
+    color: v.$catalog-surface;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.chat-list {
+  flex: 1 1 0;
+  margin: 0;
+  padding: 8px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.chat-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 12px 8px;
+  border: 0;
+  border-radius: v.$ui-radius-card;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: v.$ui-fill-row;
+  }
+
+  @include f.focus-ring-card;
+}
+
+.chat-row__text {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.chat-row__top {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chat-row__name {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-row__time {
+  flex: none;
+  color: v.$ui-ink-50;
+  font-size: 12px;
+}
+
+.chat-row__role {
+  color: v.$ui-ink-50;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.chat-row__preview {
+  overflow: hidden;
+  color: v.$ui-ink-70;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// --- states ----------------------------------------------------------------
+
+.chat-state {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 40px 40px;
+  text-align: center;
+}
+
+.chat-state__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: v.$ui-fill;
+
+  &--danger {
+    background: v.$ui-danger-fill;
+  }
+}
+
+.chat-state__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.chat-state__text {
+  max-width: 260px;
+  margin: 0;
+  color: v.$ui-ink-65;
+  font-size: 14px;
+  line-height: 21px;
+}
+
+.chat-state__loading {
+  margin: 0;
+  color: v.$ui-ink-50;
+  font-size: 13px;
+}
+
+.chat-state__retry {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: v.$ui-radius-control;
+  background: v.$ui-ink;
+  color: v.$catalog-surface;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  @include f.focus-ring-card;
+}
+
+// --- thread ----------------------------------------------------------------
+
+.chat-thread {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  // Pushes a short conversation to the bottom, as drawn, while still letting a
+  // long one scroll from the top.
+  > :first-child {
+    margin-top: auto;
+  }
+}
+
+.chat-thread__older,
+.chat-thread__empty {
+  margin: 0;
+  color: rgba(21, 21, 21, 0.45);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.chat-group-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-day {
+  align-self: center;
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: v.$ui-fill;
+  color: v.$ui-ink-60;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.chat-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+
+  &--mine {
+    align-items: flex-end;
+  }
+}
+
+.chat-bubble-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: inherit;
+  max-width: 80%;
+}
+
+// Received bubbles are light grey with the joined corners on the left; sent
+// ones are black with the joined corners on the right (97:10150-97:10175).
+.chat-bubble {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 6px 18px 18px 6px;
+  background: v.$ui-bubble-in;
+  color: v.$ui-ink;
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+
+  &--first {
+    border-top-left-radius: 18px;
+  }
+
+  &--last {
+    border-bottom-left-radius: 18px;
+  }
+
+  .chat-group--mine & {
+    border-radius: 18px 6px 6px 18px;
+    background: v.$ui-ink;
+    color: v.$catalog-surface;
+  }
+
+  .chat-group--mine &--first {
+    border-top-right-radius: 18px;
+  }
+
+  .chat-group--mine &--last {
+    border-bottom-right-radius: 6px;
+  }
+
+  &--sending,
+  .chat-group--mine &--sending {
+    background: v.$ui-ink-50;
+  }
+}
+
+.chat-meta {
+  margin: 0;
+  padding: 2px 4px 0;
+  color: v.$ui-ink-50;
+  font-size: 11px;
+}
+
+.chat-failed {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0;
+  padding: 2px 4px 4px;
+  font-size: 12px;
+
+  span[aria-hidden] {
+    color: v.$ui-ink-30;
+  }
+
+  button {
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: v.$ui-ink;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+
+    @include f.focus-ring-card;
+  }
+}
+
+.chat-failed__label {
+  color: v.$ui-danger;
+  font-weight: 500;
+}
+
+// --- composer --------------------------------------------------------------
+
+.chat-compose {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 12px 12px 16px;
+  border-top: 1px solid v.$ui-hairline;
+}
+
+.chat-compose__input {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 11px 16px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: rgba(21, 21, 21, 0.05);
+  color: v.$ui-ink;
+  font-family: inherit;
+  font-size: 14px;
+
+  &::placeholder {
+    color: v.$ui-ink-40;
+  }
+
+  &:focus {
+    border-color: v.$ui-ink;
+    outline: none;
+  }
+}
+
+.chat-compose__send {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: v.$ui-ink;
+  cursor: pointer;
+
+  @include f.focus-ring-card;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+  }
+}
+
+// --- phone: full screen ------------------------------------------------------
+
+@media (max-width: v.$breakpoint-phone) {
+  .chat {
+    right: 16px;
+    bottom: 24px;
+  }
+
+  .chat-popup {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .chat:has(.chat-popup) .chat-launcher {
+    display: none;
+  }
+}

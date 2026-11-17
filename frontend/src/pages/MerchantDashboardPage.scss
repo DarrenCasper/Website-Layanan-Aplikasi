@@ -1,0 +1,752 @@
+@use '../styles/variables' as v;
+@use '../styles/focus' as f;
+
+// Merchant dashboard (Figma #37). A 248px white sidebar and an 880px column of
+// white cards, centred under the bar (1160px in the 1440 frame).
+
+.dash {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100svh;
+  background: v.$auth-bg;
+  color: v.$auth-text;
+  font-family: v.$font-auth;
+}
+
+.dash__center {
+  display: flex;
+  justify-content: center;
+  padding: 80px 20px;
+}
+
+.dash__muted {
+  margin: 0;
+  color: v.$ui-on-dark-60;
+  font-size: 14px;
+
+  &--ink {
+    color: v.$ui-ink-55;
+  }
+}
+
+.dash__body {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  width: min(1160px, 100% - 40px);
+  margin: 0 auto;
+  padding: 32px 0 96px;
+}
+
+.dash__main {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+// --- open store (97:7920) ------------------------------------------------------
+
+.open-store {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: min(420px, 100%);
+  padding: 36px;
+  border-radius: v.$ui-radius-modal;
+  background: v.$catalog-surface;
+  color: v.$ui-ink;
+}
+
+.open-store__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: v.$ui-ink;
+}
+
+.open-store__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.open-store__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.open-store__text {
+  margin: 0;
+  color: v.$ui-ink-65;
+  font-size: 14px;
+  line-height: 21px;
+}
+
+// --- sidebar (97:7960) ---------------------------------------------------------
+
+.dash-side {
+  position: sticky;
+  top: calc(#{v.$catalog-navbar-height} + 24px);
+  flex: none;
+  width: 248px;
+  padding: 12px;
+  border-radius: v.$ui-radius-card;
+  background: v.$catalog-surface;
+  color: v.$ui-ink;
+}
+
+.dash-side__store {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 8px 16px;
+}
+
+.dash-side__avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: v.$ui-radius-card;
+  background: v.$ui-ink;
+  color: v.$catalog-surface;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dash-side__store-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dash-side__name {
+  margin: 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-side__role {
+  margin: 0;
+  color: v.$ui-ink-55;
+  font-size: 12px;
+}
+
+.dash-side__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-side__link {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: v.$ui-radius-control;
+  color: rgba(21, 21, 21, 0.8);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover {
+    background: v.$ui-fill-row;
+  }
+
+  @include f.focus-ring-card;
+
+  &--on,
+  &--on:hover {
+    background: v.$ui-ink;
+    color: v.$catalog-surface;
+    font-weight: 600;
+  }
+}
+
+// One white store glyph and one dark box glyph exist as assets; each is turned
+// to the other tone with a filter when its row's state calls for it.
+.dash-side__link:not(.dash-side__link--on) .dash-side__icon--light {
+  filter: invert(1);
+  opacity: 0.65;
+}
+
+.dash-side__link--on .dash-side__icon--dark {
+  filter: invert(1) brightness(1.6);
+}
+
+.dash-side__grow {
+  flex: 1 1 0;
+}
+
+.dash-side__chevron {
+  transform: rotate(180deg);
+}
+
+.dash-side__sep {
+  width: 100%;
+  height: 1px;
+  margin: 8px 0;
+  border: 0;
+  background: v.$ui-hairline;
+}
+
+// --- cards ---------------------------------------------------------------------
+
+.dash-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px;
+  border-radius: v.$ui-radius-card;
+  background: v.$catalog-surface;
+  color: v.$ui-ink;
+}
+
+.dash-card__head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dash-card__title {
+  flex: 1 1 0;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.dash-card__meta {
+  margin: 0;
+  color: v.$ui-ink-55;
+  font-size: 13px;
+}
+
+.dash-card__rule {
+  width: 100%;
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: v.$ui-hairline;
+}
+
+.dash-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin: 0;
+
+  dt {
+    margin-bottom: 6px;
+    color: v.$ui-ink-55;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.dash-profile__name {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.dash-profile__desc {
+  font-size: 15px;
+  line-height: 23px;
+  white-space: pre-line;
+}
+
+.dash-stats {
+  display: flex;
+  gap: 48px;
+  margin: 0;
+
+  div {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 2px;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  dt {
+    color: v.$ui-ink-60;
+    font-size: 13px;
+  }
+}
+
+.dash-note {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: v.$ui-radius-control;
+  background: v.$ui-fill;
+  color: v.$ui-ink-70;
+  font-size: 13px;
+  line-height: 18px;
+
+  svg {
+    flex: none;
+  }
+}
+
+.dash-toast {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: v.$ui-radius-control;
+  background: rgba(46, 160, 67, 0.12);
+  color: #1d6b2c;
+  font-size: 13px;
+}
+
+// --- members (97:8013) -----------------------------------------------------------
+
+.dash-add {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.dash-add__field {
+  flex: 1 1 0;
+}
+
+.dash-members {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dash-member {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+
+  & + & {
+    border-top: 1px solid v.$ui-hairline;
+  }
+}
+
+.dash-member__avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: v.$ui-hairline;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dash-member__text {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dash-member__name {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-member__email {
+  overflow: hidden;
+  color: v.$ui-ink-55;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-member__role {
+  flex: none;
+  width: 84px;
+}
+
+.dash-member__action {
+  display: flex;
+  flex: none;
+  justify-content: flex-end;
+  width: 116px;
+}
+
+// --- catalog (97:8325) -------------------------------------------------------------
+
+.dash-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dash-segment {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: v.$ui-radius-card;
+  background: v.$ui-fill;
+}
+
+.dash-segment__item {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: v.$ui-ink-60;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  @include f.focus-ring-card;
+
+  &--on {
+    background: v.$catalog-surface;
+    box-shadow: v.$ui-shadow-raised;
+    color: v.$ui-ink;
+    font-weight: 600;
+  }
+}
+
+.dash-search {
+  position: relative;
+  width: 300px;
+  max-width: 100%;
+
+  .ui-input {
+    padding-right: 40px;
+  }
+
+  img {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+}
+
+.dash-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  padding: 32px 12px;
+  border-radius: v.$ui-radius-control;
+  background: v.$ui-fill-row;
+  color: v.$ui-ink-65;
+  font-size: 14px;
+  text-align: center;
+
+  p {
+    margin: 0;
+  }
+}
+
+.dash-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+
+  th {
+    padding: 10px 12px;
+    background: v.$ui-fill-row;
+    color: v.$ui-ink-55;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+
+    &:first-child {
+      border-radius: v.$ui-radius-control 0 0 v.$ui-radius-control;
+    }
+
+    &:last-child {
+      width: 84px;
+      border-radius: 0 v.$ui-radius-control v.$ui-radius-control 0;
+    }
+
+    &:nth-child(2) {
+      width: 180px;
+    }
+
+    &:nth-child(3) {
+      width: 140px;
+    }
+
+    &:nth-child(4) {
+      width: 64px;
+    }
+  }
+
+  td {
+    padding: 12px;
+    vertical-align: middle;
+  }
+
+  tbody tr + tr td {
+    border-top: 1px solid rgba(21, 21, 21, 0.07);
+  }
+}
+
+.dash-row__name {
+  font-weight: 600;
+
+  // A flex box on the cell itself would break the table layout, so the thumb
+  // and the name sit inline and the thumb is aligned with the text.
+  display: table-cell;
+
+  span {
+    vertical-align: middle;
+  }
+}
+
+.dash-row__thumb {
+  margin-right: 12px;
+  border-radius: v.$ui-radius-control;
+  background: v.$ui-fill;
+  object-fit: cover;
+  vertical-align: middle;
+}
+
+.dash-row__none {
+  color: v.$ui-ink-40;
+}
+
+.dash-row--out .dash-row__qty {
+  color: v.$ui-danger;
+  font-weight: 600;
+}
+
+.dash-row__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dash-confirm {
+  margin: 0;
+  color: v.$ui-ink-75;
+  font-size: 14px;
+  line-height: 21px;
+}
+
+.listing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.listing-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.dash-show-phone {
+  display: none;
+}
+
+// --- tablet: sidebar becomes pill tabs (Figma "Mobile / 3 Katalog") ----------------
+
+@media (max-width: 900px) {
+  .dash__body {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    padding-top: 16px;
+  }
+
+  .dash-side {
+    position: static;
+    width: auto;
+    padding: 0;
+    background: transparent;
+  }
+
+  .dash-side__store,
+  .dash-side__sep,
+  .dash-side__link img {
+    display: none;
+  }
+
+  .dash-side__nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .dash-side__link {
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: v.$ui-on-dark-chip;
+    color: v.$catalog-surface;
+    font-size: 13px;
+    font-weight: 600;
+
+    &:hover {
+      background: #3a3a3a;
+    }
+
+    &--on,
+    &--on:hover {
+      background: v.$catalog-surface;
+      color: v.$ui-ink;
+    }
+
+    @include f.focus-ring-light;
+  }
+}
+
+// --- phone: the table becomes a list of cards ---------------------------------------
+
+@media (max-width: 640px) {
+  .dash-card {
+    padding: 20px 18px;
+  }
+
+  .dash-hide-phone {
+    display: none;
+  }
+
+  .dash-show-phone {
+    display: inline;
+  }
+
+  .dash-search {
+    width: 100%;
+  }
+
+  .dash-stats {
+    gap: 32px;
+  }
+
+  .dash-add {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dash-member {
+    flex-wrap: wrap;
+  }
+
+  .dash-member__role,
+  .dash-member__action {
+    width: auto;
+  }
+
+  .dash-table thead {
+    display: none;
+  }
+
+  .dash-table,
+  .dash-table tbody {
+    display: block;
+  }
+
+  .dash-table tr {
+    display: grid;
+    grid-template-columns: 56px auto 1fr auto;
+    grid-template-areas:
+      'thumb name name actions'
+      'thumb category category actions'
+      'thumb price qty actions';
+    gap: 4px 12px;
+    padding: 14px 0;
+
+    & + tr {
+      border-top: 1px solid rgba(21, 21, 21, 0.07);
+    }
+  }
+
+  .dash-table td {
+    padding: 0;
+    border: 0 !important;
+  }
+
+  .dash-row__name {
+    display: contents;
+
+    img {
+      grid-area: thumb;
+      width: 56px;
+      height: 56px;
+      margin: 0;
+    }
+
+    span {
+      grid-area: name;
+      font-size: 15px;
+    }
+  }
+
+  .dash-row__category {
+    grid-area: category;
+    justify-self: start;
+  }
+
+  .dash-row__price,
+  .dash-row__qty {
+    color: v.$ui-ink-65;
+  }
+
+  .dash-row__price {
+    grid-area: price;
+  }
+
+  // Price and stock share one line: "Rp 32.000.000 · Stok 2".
+  .dash-row__qty {
+    grid-area: qty;
+
+    &::before {
+      content: '· ' attr(data-label) ' ';
+    }
+  }
+
+  .dash-row--out .dash-row__price {
+    color: v.$ui-danger;
+  }
+
+  .dash-row--out .dash-row__qty::before {
+    content: '· ';
+  }
+
+  .dash-row__actions {
+    grid-area: actions;
+    align-self: start;
+  }
+
+  .listing-form__row {
+    grid-template-columns: 1fr;
+  }
+}
