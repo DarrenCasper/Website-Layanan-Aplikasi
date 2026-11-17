@@ -1,0 +1,329 @@
+@use './variables' as v;
+@use './focus' as f;
+
+// Form controls and buttons shared by the merchant dashboard and its dialogs
+// (Figma #37). Plain global classes because the dialogs render in a portal
+// outside the page.
+
+.ui-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ui-label-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ui-label {
+  color: v.$ui-ink;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.ui-required {
+  color: v.$ui-danger;
+}
+
+.ui-optional {
+  color: v.$ui-ink-50;
+  font-weight: 400;
+}
+
+.ui-input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid v.$ui-border;
+  border-radius: v.$ui-radius-control;
+  background: v.$catalog-surface;
+  color: v.$ui-ink;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: normal;
+
+  &::placeholder {
+    color: v.$ui-ink-40;
+  }
+
+  &:focus {
+    border-color: v.$ui-ink;
+    outline: none;
+    box-shadow: 0 0 0 1px v.$ui-ink;
+  }
+
+  &--invalid,
+  &--invalid:focus {
+    border-color: v.$ui-danger;
+    box-shadow: none;
+  }
+}
+
+.ui-textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.ui-help {
+  margin: 0;
+  color: v.$ui-ink-60;
+  font-size: 12px;
+  line-height: normal;
+}
+
+.ui-error {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0;
+  color: v.$ui-danger;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: normal;
+
+  img {
+    flex: none;
+  }
+}
+
+// Input with an "Rp" prefix (Figma Field/Harga).
+.ui-affix {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid v.$ui-border;
+  border-radius: v.$ui-radius-control;
+  background: v.$catalog-surface;
+  font-size: 14px;
+
+  &:focus-within {
+    border-color: v.$ui-ink;
+    box-shadow: 0 0 0 1px v.$ui-ink;
+  }
+
+  &--invalid,
+  &--invalid:focus-within {
+    border-color: v.$ui-danger;
+    box-shadow: none;
+  }
+}
+
+.ui-affix__prefix {
+  color: v.$ui-ink-50;
+  font-weight: 500;
+}
+
+.ui-affix__input {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: v.$ui-ink;
+  font-family: inherit;
+  font-size: 14px;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+// Native select with the design's chevron (Figma icon/down).
+.ui-select {
+  position: relative;
+  display: block;
+
+  select {
+    padding-right: 40px;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  img {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+}
+
+// Tag input (Figma TagInput 97:8650).
+.ui-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-height: 42px;
+  padding: 7px 10px;
+  border: 1px solid v.$ui-border;
+  border-radius: v.$ui-radius-control;
+  background: v.$catalog-surface;
+  cursor: text;
+
+  &:focus-within {
+    border-color: v.$ui-ink;
+    box-shadow: 0 0 0 1px v.$ui-ink;
+  }
+
+  &--invalid,
+  &--invalid:focus-within {
+    border-color: v.$ui-danger;
+    box-shadow: none;
+  }
+}
+
+.ui-tag {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 8px 4px 10px;
+  border-radius: 999px;
+  background: v.$ui-fill-badge;
+  color: v.$ui-ink;
+  font-size: 12px;
+  font-weight: 500;
+
+  button {
+    display: flex;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    cursor: pointer;
+
+    @include f.focus-ring-card;
+  }
+}
+
+.ui-tags__input {
+  flex: 1 1 120px;
+  min-width: 80px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: v.$ui-ink;
+  font-family: inherit;
+  font-size: 13px;
+
+  &::placeholder {
+    color: v.$ui-ink-40;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.ui-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: v.$ui-fill-badge;
+  color: v.$ui-ink-75;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+
+  &--dark {
+    background: v.$ui-ink;
+    color: v.$catalog-surface;
+  }
+}
+
+.ui-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+.ui-btn {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border: 1px solid transparent;
+  border-radius: v.$ui-radius-control;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+
+  @include f.focus-ring-card;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &--sm {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  &--block {
+    width: 100%;
+  }
+
+  &--primary {
+    background: v.$ui-ink;
+    color: v.$catalog-surface;
+  }
+
+  &--ghost {
+    border-color: v.$ui-border-soft;
+    background: v.$catalog-surface;
+    color: v.$ui-ink;
+
+    &:hover:not(:disabled) {
+      background: v.$ui-fill-row;
+    }
+  }
+
+  &--danger {
+    background: v.$ui-danger;
+    color: v.$catalog-surface;
+  }
+
+  &--text {
+    background: transparent;
+    color: v.$ui-ink;
+
+    &:hover:not(:disabled) {
+      background: v.$ui-fill-row;
+    }
+  }
+
+  img {
+    flex: none;
+  }
+}
+
+.ui-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: v.$ui-radius-control;
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    background: v.$ui-fill;
+  }
+
+  @include f.focus-ring-card;
+}

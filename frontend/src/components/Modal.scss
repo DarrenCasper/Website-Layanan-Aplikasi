@@ -1,0 +1,81 @@
+@use '../styles/variables' as v;
+@use '../styles/focus' as f;
+
+.modal-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  font-family: v.$font-auth;
+}
+
+.modal-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-height: 100%;
+  padding: 24px 28px 28px;
+  border-radius: v.$ui-radius-modal;
+  background: v.$catalog-surface;
+  box-shadow: v.$ui-shadow-modal;
+  color: v.$ui-ink;
+  overflow-y: auto;
+
+  &--sm {
+    max-width: 440px;
+  }
+
+  &--md {
+    max-width: 560px;
+  }
+}
+
+.modal__head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.modal__title {
+  flex: 1 1 0;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.modal__close {
+  display: flex;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+
+  @include f.focus-ring-card;
+}
+
+// On a phone the dialog rises from the bottom as a sheet (Figma 97:9300).
+@media (max-width: v.$breakpoint-phone) {
+  .modal-layer {
+    align-items: flex-end;
+    padding: 12px 0 0;
+  }
+
+  .modal {
+    max-width: none;
+    padding: 20px;
+    border-radius: v.$ui-radius-popup v.$ui-radius-popup 0 0;
+  }
+}

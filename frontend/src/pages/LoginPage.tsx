@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/AuthLayout'
 import { loginUser, toErrorMessage } from '../lib/api'
 import { useAuth } from '../context/authContext'
@@ -7,6 +7,11 @@ import loginHero from '../assets/login-hero.jpg'
 
 function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  // A page that sent the visitor here (a guarded route, or "Chat penjual")
+  // passes its own path, so signing in returns there instead of to Explore.
+  const fromState = (location.state as { from?: unknown } | null)?.from
+  const returnTo = typeof fromState === 'string' && /^\/(?!\/)/.test(fromState) ? fromState : '/'
   const { login } = useAuth()
 
   const [email, setEmail] = useState('')
@@ -34,7 +39,7 @@ function LoginPage() {
       login(token, user)
       // replace keeps the back button from returning to a form that has already
       // been used to sign in.
-      navigate('/', { replace: true })
+      navigate(returnTo, { replace: true })
     } catch (caught) {
       setError(toErrorMessage(caught))
       setIsSubmitting(false)

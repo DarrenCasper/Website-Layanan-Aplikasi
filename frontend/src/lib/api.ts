@@ -81,7 +81,9 @@ export const ITS_STUDENT_EMAIL_DOMAIN = '@student.its.ac.id'
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
-  token?: string
+  token?: string | null
+  /** Lets a caller cancel a request that a newer one has made stale. */
+  signal?: AbortSignal
 }
 
 // Reading the raw text first keeps a non-JSON error page (a proxy failure, say)
@@ -114,7 +116,7 @@ function extractMessage(payload: unknown, status: number): string {
 
 /** Sends a JSON request and throws ApiError for any non-2xx response. */
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, token } = options
+  const { method = 'GET', body, token, signal } = options
 
   const headers: Record<string, string> = { Accept: 'application/json' }
 
@@ -133,8 +135,15 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal,
     })
-  } catch {
+  } catch (error) {
+    // An aborted request is not a failure the user needs to hear about, so it
+    // is rethrown as-is for the caller to recognise and ignore.
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error
+    }
+
     // A transport failure has no HTTP status, so 0 marks it as "never reached".
     throw new ApiError(0, 'Tidak dapat terhubung ke server. Periksa koneksi Anda.')
   }
@@ -168,12 +177,23 @@ export function resetPassword(body: ResetResultBody): Promise<MessageResponse> {
   return request<MessageResponse>('/reset/result', { method: 'POST', body })
 }
 
+/** True for the error fetch throws when its AbortSignal fires. */
+export function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError'
+}
+
 /**
  * Turns a thrown value into something worth showing the user. ApiError already
  * carries the backend's own wording, so anything else is genuinely unexpected.
  */
 export function toErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
+    // The catalog's rate limiter answers 429; its own wording is in English, so
+    // the buyer gets a plain explanation instead.
+    if (error.status === 429) {
+      return 'Terlalu banyak permintaan. Tunggu sebentar, lalu coba lagi.'
+    }
+
     return error.message
   }
 

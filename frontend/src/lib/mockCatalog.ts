@@ -466,6 +466,12 @@ function toProduct(seed: CatalogSeed, section: string): CatalogProduct {
     variants: seed.variants ?? [],
     tags: seed.tags,
     section,
+    kind: 'product',
+    rawDescription: seed.description ?? '',
+    // Mock listings belong to no real store, so they link to no storefront.
+    merchantId: null,
+    durationMin: null,
+    category: null,
   }
 }
 

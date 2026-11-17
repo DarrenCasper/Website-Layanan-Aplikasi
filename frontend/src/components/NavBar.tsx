@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/authContext'
 import searchIcon from '../assets/catalog/icon-search.svg'
 import './NavBar.scss'
@@ -40,6 +40,7 @@ function timeOfDayGreeting(date: Date): string {
 function NavBar({ searchValue, onSearchChange, onSearchSubmit }: NavBarProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const accountRef = useRef<HTMLDivElement>(null)
 
@@ -89,7 +90,7 @@ function NavBar({ searchValue, onSearchChange, onSearchSubmit }: NavBarProps) {
     navigate('/login', { replace: true })
   }
 
-  const firstName = user?.fullname.trim().split(/\s+/)[0] ?? 'Pengguna'
+  const firstName = user?.fullname?.trim().split(/\s+/)[0] || 'Pengguna'
   const greeting = `${timeOfDayGreeting(new Date())}, ${firstName}`
 
   return (
@@ -119,30 +120,55 @@ function NavBar({ searchValue, onSearchChange, onSearchSubmit }: NavBarProps) {
           </div>
         </div>
 
-        <div className="navbar__account" ref={accountRef}>
-          <button
-            className="navbar__greeting"
-            type="button"
-            aria-haspopup="menu"
-            aria-expanded={isMenuOpen}
-            onClick={() => setIsMenuOpen((open) => !open)}
-          >
-            {greeting}
-          </button>
+        {user ? (
+          <div className="navbar__account" ref={accountRef}>
+            <button
+              className="navbar__greeting"
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={isMenuOpen}
+              onClick={() => setIsMenuOpen((open) => !open)}
+            >
+              {greeting}
+            </button>
 
-          {isMenuOpen ? (
-            <div className="navbar__menu" role="menu">
-              <button
-                className="navbar__menu-item"
-                type="button"
-                role="menuitem"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
-            </div>
-          ) : null}
-        </div>
+            {isMenuOpen ? (
+              <div className="navbar__menu" role="menu">
+                <button
+                  className="navbar__menu-item"
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    navigate('/toko-saya')
+                  }}
+                >
+                  Toko saya
+                </button>
+                <button
+                  className="navbar__menu-item"
+                  type="button"
+                  role="menuitem"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          // The storefront is public, so a visitor without a session gets a
+          // way in that returns them to the page they were on.
+          <div className="navbar__account">
+            <Link
+              className="navbar__greeting"
+              to="/login"
+              state={{ from: `${location.pathname}${location.search}` }}
+            >
+              Masuk
+            </Link>
+          </div>
+        )}
       </nav>
     </div>
   )

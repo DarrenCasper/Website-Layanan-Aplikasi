@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/authContext'
 
 type RequireAuthProps = {
@@ -11,9 +11,12 @@ type RequireAuthProps = {
 // an empty shell. `replace` keeps the guarded URL out of the history stack.
 function RequireAuth({ children }: RequireAuthProps) {
   const { isAuthenticated } = useAuth()
+  const location = useLocation()
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return (
+      <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />
+    )
   }
 
   return <>{children}</>

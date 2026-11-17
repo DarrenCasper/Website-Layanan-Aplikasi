@@ -31,3 +31,14 @@
       0 0 0 5px rgba(255, 255, 255, 0.9);
   }
 }
+
+/// Focus ring for controls inside the white cards of the redesigned screens,
+/// which sit close to other controls, so the ring is drawn tight.
+@mixin focus-ring-card {
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px v.$catalog-surface,
+      0 0 0 4px v.$catalog-focus-ring-dark;
+  }
+}

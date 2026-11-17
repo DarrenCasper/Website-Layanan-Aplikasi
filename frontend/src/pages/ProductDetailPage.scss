@@ -377,54 +377,99 @@
   }
 }
 
+// Seller block (Figma #38 97:9808): a bordered row with a rounded-square
+// avatar, the store name and catalog size, and the store and chat actions.
 .detail__merchant {
   display: flex;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 14px;
   align-items: center;
+  padding: 16px;
+  border: 1px solid rgba(21, 21, 21, 0.12);
+  border-radius: v.$ui-radius-card;
 }
 
-// A filled disc with the shop's initials rather than the frame's blank grey
-// circle, which read as a broken image sitting right beside the shop name.
 .detail__merchant-avatar {
   display: flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 100px;
-  height: 100px;
-  border-radius: 100px;
-  background: v.$catalog-text;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: v.$ui-ink;
   color: v.$catalog-surface;
-  font-size: 32px;
+  font-size: 14px;
   font-weight: 700;
   line-height: normal;
-  letter-spacing: 0.02em;
 }
 
 .detail__merchant-text {
   display: flex;
-  flex: 1 1 0;
+  flex: 1 1 160px;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
   min-width: 0;
 }
 
 .detail__merchant-name {
   margin: 0;
   overflow: hidden;
-  font-size: 20px;
-  font-weight: 400;
+  border-radius: 4px;
+  color: v.$ui-ink;
+  font-size: 15px;
+  font-weight: 700;
   line-height: normal;
+  text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  @include f.focus-ring-card;
+}
+
+a.detail__merchant-name:hover {
+  text-decoration: underline;
 }
 
 .detail__merchant-city {
   margin: 0;
-  color: v.$catalog-text-muted;
-  font-size: 20px;
+  color: v.$ui-ink-60;
+  font-size: 13px;
   font-weight: 400;
   line-height: normal;
+}
+
+.detail__merchant-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail__merchant-visit,
+.detail__merchant-chat {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border: 1px solid v.$ui-border-soft;
+  border-radius: v.$ui-radius-control;
+  background: v.$catalog-surface;
+  color: v.$ui-ink;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+
+  @include f.focus-ring-card;
+}
+
+.detail__merchant-chat {
+  border-color: v.$ui-ink;
+  background: v.$ui-ink;
+  color: v.$catalog-surface;
 }
 
 // --- buy panel -------------------------------------------------------------

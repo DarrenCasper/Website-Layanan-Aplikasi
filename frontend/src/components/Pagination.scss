@@ -1,0 +1,61 @@
+@use '../styles/variables' as v;
+@use '../styles/focus' as f;
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+.pagination__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: v.$ui-radius-control;
+  background: v.$ui-on-dark-chip;
+  color: v.$catalog-surface;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: normal;
+  cursor: pointer;
+
+  @include f.focus-ring-light;
+
+  &:hover:not(:disabled, .pagination__button--current) {
+    background: #3a3a3a;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  &--current {
+    background: v.$catalog-surface;
+    color: v.$ui-ink;
+    cursor: default;
+  }
+
+  img {
+    display: block;
+  }
+}
+
+// One chevron asset points left; the next button turns it around.
+.pagination__button--next img {
+  transform: rotate(180deg);
+}
+
+.pagination__gap {
+  min-width: 20px;
+  color: v.$ui-on-dark-55;
+  font-size: 13px;
+  text-align: center;
+}
